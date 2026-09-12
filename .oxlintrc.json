@@ -1,0 +1,12 @@
+{
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "import", "promise", "react"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }]
+  },
+  "ignorePatterns": ["**/dist/**", "**/drizzle/**"]
+}
