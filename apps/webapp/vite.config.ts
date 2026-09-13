@@ -5,5 +5,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: { '/api': 'http://localhost:3000' },
+    allowedHosts: ['localhost', 'innoexchange.bots.abounegm.com'],
   },
 });

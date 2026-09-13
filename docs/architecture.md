@@ -174,26 +174,28 @@ knows which database it talks to.
 
 ## 10. Decisions log
 
-| Date       | Decision                                                               | Notes                                                                                                             |
-| ---------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 2026-09-12 | TypeScript + grammY; Node 24 native TS; pnpm workspaces                | Owner requirements + zero build step                                                                              |
-| 2026-09-12 | SQLite via `node:sqlite`, Drizzle **1.0 RC**                           | Stable 0.45 lacks the node-sqlite driver; alternatives were `better-sqlite3` (native build) or a community driver |
-| 2026-09-12 | Drizzle `casing` option not used; camelCase columns                    | RC removed the option; quoting makes camelCase portable                                                           |
-| 2026-09-12 | Hono for the API, one process with the bot                             | See §3                                                                                                            |
-| 2026-09-12 | Node serves the built Mini App too; Caddy is a single `reverse_proxy`  | Owner: self-contained and close to dev (Vite proxy in dev gives the same one-origin shape)                        |
-| 2026-09-12 | TanStack Router (code-based) + TanStack Query; **not** TanStack Start  | See §2/§3                                                                                                         |
-| 2026-09-12 | Channel posts: edit in place, no bump                                  | Owner: whichever is simpler                                                                                       |
-| 2026-09-12 | Access open at first; `MEMBER_CHATS` gating later                      | Owner decision                                                                                                    |
-| 2026-09-12 | Pending requests auto-declined after 12 h by the DB-driven scheduler   | Owner: yes if straightforward — it is one more "due" query                                                        |
-| 2026-09-12 | Handles/names from `getMe`, env and the locale catalog; never literals | Owner: placeholders must be easy to change                                                                        |
-| 2026-09-12 | Prototype files not kept; `docs/spec.md` + `docs/screenshots/` only    | Superseded by `packages/shared` and the screenshots                                                               |
-| 2026-09-12 | No shared bot/Mini-App renderer; share vocabulary + per-feature docs   | See §4                                                                                                            |
-| 2026-09-12 | Vertical slices in the backend, FSD in the Mini App                    | FSD layers don't map to a bot                                                                                     |
-| 2026-09-12 | Fluent (`@grammyjs/i18n`) for en/ru/ar, catalog in `packages/shared`   | Owner choice; Arabic/Russian plurals                                                                              |
-| 2026-09-12 | Oxlint + Oxfmt over Biome                                              | Owner preference                                                                                                  |
-| 2026-09-12 | Currency/method config in code, not a table                            | No admin UI exists; revisit if non-developers must edit                                                           |
-| 2026-09-12 | Money as integer minor units, rate as REAL                             | Display-only rate; exact amounts                                                                                  |
-| 2026-09-12 | Deployment: VPS + Docker + Caddy, long polling                         | Owner decision; Dockerfile/compose added at first deploy                                                          |
+| Date       | Decision                                                                                     | Notes                                                                                                             |
+| ---------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 2026-09-12 | TypeScript + grammY; Node 24 native TS; pnpm workspaces                                      | Owner requirements + zero build step                                                                              |
+| 2026-09-12 | SQLite via `node:sqlite`, Drizzle **1.0 RC**                                                 | Stable 0.45 lacks the node-sqlite driver; alternatives were `better-sqlite3` (native build) or a community driver |
+| 2026-09-12 | Drizzle `casing` option not used; camelCase columns                                          | RC removed the option; quoting makes camelCase portable                                                           |
+| 2026-09-12 | Hono for the API, one process with the bot                                                   | See §3                                                                                                            |
+| 2026-09-12 | Node serves the built Mini App too; Caddy is a single `reverse_proxy`                        | Owner: self-contained and close to dev (Vite proxy in dev gives the same one-origin shape)                        |
+| 2026-09-12 | TanStack Router (code-based) + TanStack Query; **not** TanStack Start                        | See §2/§3                                                                                                         |
+| 2026-09-12 | Channel posts: edit in place, no bump                                                        | Owner: whichever is simpler                                                                                       |
+| 2026-09-12 | Access open at first; `MEMBER_CHATS` gating later                                            | Owner decision                                                                                                    |
+| 2026-09-12 | Pending requests auto-declined after 12 h by the DB-driven scheduler                         | Owner: yes if straightforward — it is one more "due" query                                                        |
+| 2026-09-12 | Handles/names from `getMe`, env and the locale catalog; never literals                       | Owner: placeholders must be easy to change                                                                        |
+| 2026-09-12 | Mini app imports the API _type_ from `@sarraf/bot/api` (workspace dev-dependency, type-only) | One source of truth for routes and payloads; costs a slower webapp typecheck                                      |
+| 2026-09-12 | Native Telegram main/back buttons, with in-page fallbacks when the env is mocked             | Keeps the Telegram-native feel without making browser dev unusable                                                |
+| 2026-09-12 | Prototype files not kept; `docs/spec.md` + `docs/screenshots/` only                          | Superseded by `packages/shared` and the screenshots                                                               |
+| 2026-09-12 | No shared bot/Mini-App renderer; share vocabulary + per-feature docs                         | See §4                                                                                                            |
+| 2026-09-12 | Vertical slices in the backend, FSD in the Mini App                                          | FSD layers don't map to a bot                                                                                     |
+| 2026-09-12 | Fluent (`@grammyjs/i18n`) for en/ru/ar, catalog in `packages/shared`                         | Owner choice; Arabic/Russian plurals                                                                              |
+| 2026-09-12 | Oxlint + Oxfmt over Biome                                                                    | Owner preference                                                                                                  |
+| 2026-09-12 | Currency/method config in code, not a table                                                  | No admin UI exists; revisit if non-developers must edit                                                           |
+| 2026-09-12 | Money as integer minor units, rate as REAL                                                   | Display-only rate; exact amounts                                                                                  |
+| 2026-09-12 | Deployment: VPS + Docker + Caddy, long polling                                               | Owner decision; Dockerfile/compose added at first deploy                                                          |
 
 ## 11. Roadmap (suggested order — dependency and value)
 

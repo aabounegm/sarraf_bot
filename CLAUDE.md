@@ -47,12 +47,20 @@ apps/bot/src/         one Node process: bot + API + DB
   db/                   schema.ts, index.ts (openDb); migrations in apps/bot/drizzle/
   bot/                  createBot(): plugins (session in SQLite, i18n), BotContext type
   http/                 createHttp(): Hono app: /api routes + serves apps/webapp/dist (SPA fallback); auth.ts = initData verification
-  features/<name>/      (to be created per feature) bot.ts | api.ts | service.ts — vertical slices
+  lib/app-error.ts      AppError(status, code): thrown by services, mapped by http/index.ts onError
+  features/offers/      service.ts (rules) · api.ts (Hono routes) · *.test.ts — the pattern for every feature
 
 apps/webapp/src/      Feature-Sliced Design: app/ pages/ widgets/ features/ entities/ shared/
-  app/main.tsx          initTelegram() → createLocalization() → <App>
-  app/telegram.ts       SDK init; mocks the Telegram env in dev outside Telegram
+  app/main.tsx          initTelegram() → createLocalization() → createAppRouter(start_param) → <App>
+  app/router.tsx        code-based TanStack routes; memory history seeded from start_param
+  pages/*               one folder per screen; compose widgets/features; no data logic
+  widgets/offer-card    list row used by Browse and My offers
+  features/*            offer-form (state → OfferInput), manage-offer (pause/resume/close)
+  entities/offer        model.ts (types via InferResponseType), api.ts (Query hooks), format.ts (localized text)
+  shared/api/client.ts  hc<Api>('/api') + unwrap() → ApiError(code)
+  shared/lib/telegram.ts initTelegram (mocks env in dev), useMainButton/useBackButton, haptic, confirmDialog
   shared/lib/i18n.ts    Fluent bundle from @sarraf/shared/locales
+  shared/ui/Page.tsx    Page (back button) and PrimaryButton (native main button or fallback)
 ```
 
 Rules of thumb:
@@ -90,7 +98,11 @@ Rules of thumb:
 - `node:sqlite` is opened with `PRAGMA foreign_keys = ON` and WAL; tests use `':memory:'`.
 - Mini app auth: `Authorization: tma <initData>` header, verified server-side with HMAC
   (`apps/bot/src/http/auth.ts`); routes after `telegramAuth` read `c.get('user')`.
-- The Hono app type is exported as `Api` for `hc<Api>()` in the mini app (end-to-end typed client).
+- The Hono API type is exported as `Api` from `@sarraf/bot/api` (bot `package.json` exports) and imported
+  type-only by the mini app's `shared/api/client.ts`. Consequence: the webapp typecheck compiles bot
+  sources too, so its tsconfig includes `node` types. Response types come from `InferResponseType`.
+- Mini app in a plain browser (`isMocked()`): Telegram's main/back buttons don't exist, so `Page` and
+  `PrimaryButton` render in-page fallbacks. Each locale has a `locale-tag` message used for `Intl`.
 
 ## Working agreement with the owner
 
@@ -101,18 +113,16 @@ Rules of thumb:
 
 ## Current state
 
-**Bootstrapped skeleton, no features yet** (2026-09-12). Working: workspace, shared domain
-package with tests, Drizzle schema + first migration, bot boots with session + i18n and answers
-`/start` with an "Open InnoExchange" button, Hono `/api/health` and `/api/me` (auth-gated) plus
-serving the built mini app with SPA fallback, mini app renders TelegramUI `AppRoot` with the
-localized app name. `pnpm check` is green.
+**Offers feature done (API + mini app), 2026-09-12.** See [docs/features/offers.md](docs/features/offers.md).
+Working: create/browse/detail/edit/pause/resume/close via `/api/offers*` and the mini app pages
+(TanStack Router + Query, typed `hc<Api>` client); bot answers `/start`; dev-in-browser works end
+to end (`/api/dev/init-data`). `pnpm check` is green (11 bot tests, 7 shared).
 
 Not yet done, suggested order (see architecture.md → Roadmap for detail):
 
-1. Offers feature: create/list/detail (service + API + mini app Browse/Detail/Create screens,
-   TanStack Router (code-based) + TanStack Query, `hc<Api>('/api')` client)
-2. Channel post sync (render + edit in place / delete, rate-limit aware; no bumping)
-3. Claims handshake (take → confirm/decline → two-sided done; bot notifications)
+1. ~~Offers core~~ ✔
+2. Channel post sync (render + edit in place / delete, rate-limit aware; no bumping) — hook points listed in docs/features/offers.md
+3. Claims handshake (take → confirm/decline → two-sided done; bot notifications; "Your requests" in My offers)
 4. Bot `/new` wizard (`@grammyjs/conversations`), `/mine`, take wizard from `?start=take_<id>`
 5. Scheduled jobs (DB-driven, restart-safe): expiry, 48h check-in for no-expiry offers, 12h pending auto-decline
 6. Access gating switch (`MEMBER_CHATS` via `getChatMember`), admin commands
