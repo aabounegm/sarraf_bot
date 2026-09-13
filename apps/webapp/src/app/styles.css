@@ -9,3 +9,14 @@
 .app button {
   font-family: inherit;
 }
+
+/* Input stretches its <input> to width:100%, which squeezes the before/after slots until
+   their text wraps ("1 USDT =" on three lines). Give the input the leftover space instead. */
+.form-input > input {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-input > div {
+  flex-shrink: 0;
+}

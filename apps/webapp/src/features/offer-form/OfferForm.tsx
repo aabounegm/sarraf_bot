@@ -87,6 +87,7 @@ export function OfferForm({ form }: { form: Form }) {
           onChange={form.setGiveCurrency}
         />
         <Input
+          className="form-input"
           type="text"
           inputMode="decimal"
           placeholder="0"
@@ -134,6 +135,7 @@ export function OfferForm({ form }: { form: Form }) {
         }
       >
         <Input
+          className="form-input"
           type="text"
           inputMode="decimal"
           before={`1 ${base} =`}
