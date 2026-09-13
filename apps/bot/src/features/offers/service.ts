@@ -30,6 +30,7 @@ export interface OfferSummary {
   note: string | null;
   expiresAt: number | null;
   createdAt: number;
+  /** `username` is only filled in for someone entitled to make contact — see `reveal`. */
   poster: { id: number; firstName: string; username: string | null; deals: number };
   availability: ReturnType<typeof availability>;
 }
@@ -37,12 +38,22 @@ export interface OfferSummary {
 export interface OfferDetail extends OfferSummary {
   claims: {
     id: number;
-    taker: { id: number; firstName: string };
+    taker: { id: number; firstName: string; username: string | null };
     amount: number;
     method: string;
     status: ClaimStatus;
+    takerDone: boolean;
+    posterDone: boolean;
   }[];
 }
+
+/**
+ * Contact gating: handles are exchanged only between the two sides of a claim the poster has
+ * confirmed. This is what stops people texting about offers that are already gone.
+ */
+const REVEALING: ClaimStatus[] = ['confirmed', 'done'];
+const reveal = (user: UserRow | undefined, allowed: boolean) =>
+  allowed ? (user?.username ?? null) : null;
 
 /** Only takeable offers are on the board; a paused one stays visible to its poster in "My offers". */
 const browsable = eq(offers.status, 'active');
@@ -122,20 +133,36 @@ export function applyOfferAction(
   return offer;
 }
 
-export function getOffer(db: DbOrTx, offerId: number): OfferDetail {
+/** `viewerId` decides whose handles are revealed; omit it for renderings with no viewer. */
+export function getOffer(db: DbOrTx, offerId: number, viewerId?: number): OfferDetail {
   const row = db.select().from(offers).where(eq(offers.id, offerId)).get();
   if (!row) throw new AppError(404, 'offer-not-found');
   const offerClaims = claimsOf(db, [offerId]);
   const people = usersById(db, [row.posterId, ...offerClaims.map((c) => c.takerId)]);
   const deals = dealsByUser(db, [row.posterId]);
+  const isPoster = viewerId === row.posterId;
+  const summary = toSummary(row, people, deals, offerClaims);
   return {
-    ...toSummary(row, people, deals, offerClaims),
+    ...summary,
+    poster: {
+      ...summary.poster,
+      username: reveal(
+        people.get(row.posterId),
+        offerClaims.some((c) => c.takerId === viewerId && REVEALING.includes(c.status)),
+      ),
+    },
     claims: offerClaims.map((c) => ({
       id: c.id,
-      taker: { id: c.takerId, firstName: people.get(c.takerId)?.firstName ?? '' },
+      taker: {
+        id: c.takerId,
+        firstName: people.get(c.takerId)?.firstName ?? '',
+        username: reveal(people.get(c.takerId), isPoster && REVEALING.includes(c.status)),
+      },
       amount: c.amount,
       method: c.method,
       status: c.status,
+      takerDone: c.takerDone,
+      posterDone: c.posterDone,
     })),
   };
 }
@@ -145,16 +172,15 @@ export function listOffers(db: DbOrTx, filter: { give?: Currency } = {}): OfferS
   return summarize(db, db.select().from(offers).where(where).orderBy(desc(offers.createdAt)).all());
 }
 
-export function listOffersByPoster(db: DbOrTx, posterId: number): OfferSummary[] {
-  return summarize(
-    db,
-    db
-      .select()
-      .from(offers)
-      .where(eq(offers.posterId, posterId))
-      .orderBy(desc(offers.createdAt))
-      .all(),
-  );
+/** The poster's own board: details, because every offer is rendered with its claims underneath. */
+export function listOffersByPoster(db: DbOrTx, posterId: number): OfferDetail[] {
+  return db
+    .select({ id: offers.id })
+    .from(offers)
+    .where(eq(offers.posterId, posterId))
+    .orderBy(desc(offers.createdAt))
+    .all()
+    .map((row) => getOffer(db, row.id, posterId));
 }
 
 // --- internals ---
@@ -217,7 +243,7 @@ function toSummary(
     poster: {
       id: row.posterId,
       firstName: poster?.firstName ?? '',
-      username: poster?.username ?? null,
+      username: null, // only getOffer reveals it, and only to the other side of a confirmed claim
       deals: deals.get(row.posterId) ?? 0,
     },
     availability: availability(row.giveAmount, offerClaims),

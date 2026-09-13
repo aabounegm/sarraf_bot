@@ -42,7 +42,8 @@ test('create, list, get: availability and poster are derived', () => {
   const created = createOffer(db, alex, input);
   assert.equal(created.status, 'active');
   assert.ok(created.expiresAt && created.expiresAt > Date.now());
-  assert.deepEqual(created.poster, { id: 1, firstName: 'Alex', username: 'alex', deals: 0 });
+  // username stays null until a confirmed claim reveals it (see claims/service.test.ts).
+  assert.deepEqual(created.poster, { id: 1, firstName: 'Alex', username: null, deals: 0 });
   assert.equal(created.availability.remaining, toMinor(200));
 
   createOffer(db, nour, {
