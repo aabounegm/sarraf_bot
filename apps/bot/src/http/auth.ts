@@ -14,10 +14,15 @@ function hmac(key: Buffer | string, data: string) {
   return createHmac('sha256', key).update(data);
 }
 
-/** Produces `initData` signed like Telegram does — used by the dev endpoint (and tests). */
+/**
+ * Produces `initData` for a fake user, HMAC-signed like Telegram does — for the dev endpoint and
+ * tests. Telegram also adds an Ed25519 `signature` we cannot forge; the Mini App SDK requires the
+ * field to exist, so a placeholder is included (and, like every field but `hash`, covered by the HMAC).
+ */
 export function signInitData(user: TelegramUser, botToken: string): string {
   const params = new URLSearchParams({
     auth_date: String(Math.floor(Date.now() / 1000)),
+    signature: 'unsigned',
     user: JSON.stringify(user),
   });
   params.sort();

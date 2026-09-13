@@ -1,5 +1,6 @@
 import {
   backButton,
+  emitEvent,
   hapticFeedback,
   init,
   isTMA,
@@ -11,6 +12,26 @@ import {
   themeParams,
 } from '@telegram-apps/sdk-react';
 import { useEffect } from 'react';
+
+/** Telegram Android light theme, as used by the design prototype. */
+const MOCK_THEME = {
+  accent_text_color: '#1c93e3',
+  bg_color: '#ffffff',
+  bottom_bar_bg_color: '#f0f0f0',
+  button_color: '#50a8eb',
+  button_text_color: '#ffffff',
+  destructive_text_color: '#cc2929',
+  header_bg_color: '#527da3',
+  hint_color: '#a8a8a8',
+  link_color: '#2678b6',
+  secondary_bg_color: '#f0f0f0',
+  section_bg_color: '#ffffff',
+  section_header_text_color: '#3a95d5',
+  section_separator_color: '#d9d9d9',
+  subtitle_text_color: '#82868a',
+  text_color: '#222222',
+} as const;
+const NO_INSETS = { left: 0, top: 0, right: 0, bottom: 0 } as const;
 
 let mocked = false;
 let currentUserId: number | undefined;
@@ -24,15 +45,33 @@ export const getCurrentUserId = () => currentUserId;
  * initData signed by the API's dev endpoint, so API calls are accepted as a fake user.
  */
 export async function initTelegram() {
-  if (import.meta.env.DEV && !isTMA()) {
+  // 'complete' really probes Telegram. The sync isTMA() only checks that launch params are
+  // retrievable, which stays true after a reload because mockTelegramEnv persists them.
+  if (import.meta.env.DEV && !(await isTMA('complete'))) {
     mocked = true;
     const initData = await (await fetch('/api/dev/init-data')).text();
     mockTelegramEnv({
       launchParams: {
         tgWebAppPlatform: 'android',
         tgWebAppVersion: '8.0',
-        tgWebAppThemeParams: {},
+        tgWebAppThemeParams: MOCK_THEME,
         tgWebAppData: initData,
+      },
+      // Answer the requests the SDK may make, as in the SDK docs' mocking example.
+      onEvent([name]) {
+        if (name === 'web_app_request_theme')
+          emitEvent('theme_changed', { theme_params: MOCK_THEME });
+        if (name === 'web_app_request_viewport') {
+          emitEvent('viewport_changed', {
+            height: window.innerHeight,
+            width: window.innerWidth,
+            is_expanded: true,
+            is_state_stable: true,
+          });
+        }
+        if (name === 'web_app_request_content_safe_area')
+          emitEvent('content_safe_area_changed', NO_INSETS);
+        if (name === 'web_app_request_safe_area') emitEvent('safe_area_changed', NO_INSETS);
       },
     });
   }
