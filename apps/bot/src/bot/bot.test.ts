@@ -10,7 +10,7 @@ import { sqliteStorage } from './session.ts';
 
 const config = loadConfig({
   BOT_TOKEN: '123:TEST',
-  WEBAPP_URL: 'https://app.example.com',
+  PUBLIC_URL: 'https://app.example.com',
   OFFERS_CHANNEL: '@innoexchange',
 });
 
@@ -46,7 +46,7 @@ test('/start replies in the user language with an "open app" button', async () =
     reply_markup: { inline_keyboard: { web_app: { url: string } }[][] };
   };
   assert.match(payload.text, /Привет, Nour\. InnoExchange \(@innoexchange_bot\)/);
-  assert.equal(payload.reply_markup.inline_keyboard[0]?.[0]?.web_app.url, config.WEBAPP_URL);
+  assert.equal(payload.reply_markup.inline_keyboard[0]?.[0]?.web_app.url, config.PUBLIC_URL);
 });
 
 test('sqlite session storage round-trips', async () => {

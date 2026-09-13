@@ -32,11 +32,11 @@ Prerequisites: Node ≥ 24, pnpm ≥ 9 (`corepack enable` gives you one).
 
 ```sh
 pnpm install
-cp apps/bot/.env.example apps/bot/.env   # fill in BOT_TOKEN (from @BotFather), WEBAPP_URL, OFFERS_CHANNEL
+cp apps/bot/.env.example apps/bot/.env   # fill in BOT_TOKEN (from @BotFather), PUBLIC_URL, OFFERS_CHANNEL
 pnpm dev                                 # bot + API on :3000, Vite on :5173 (proxies /api → :3000)
 ```
 
-`WEBAPP_URL` must be HTTPS for Telegram to open it — in development point a tunnel
+`PUBLIC_URL` must be HTTPS for Telegram to open it — in development point a tunnel
 (e.g. `cloudflared tunnel --url http://localhost:5173`) at Vite and set the URL in @BotFather
 (`/newapp` or the bot's Menu Button) and in `.env`. Opening `http://localhost:5173` in a plain
 browser also works: the SDK environment is mocked and the API (`/api/dev/init-data`, non-production
@@ -61,8 +61,8 @@ packages/shared/   Isomorphic only: domain config, money math, types, Fluent loc
 docs/              architecture.md, spec.md, screenshots/, features/ (one file per feature)
 ```
 
-## Deployment (shape; not set up yet)
+## Deployment
 
-Single VPS. Docker: one container running `apps/bot` (long polling; it also serves `/api` and
-the built Mini App from `apps/webapp/dist`) with the SQLite file on a volume, and **Caddy** in
-front for TLS with a single `reverse_proxy`. Set `NODE_ENV=production` (disables the dev auth endpoint).
+One bot = one subdomain = one Docker container (`Dockerfile`, `compose.yml`); the host's Caddy adds a
+single `reverse_proxy` block. In production the bot uses a webhook at `PUBLIC_URL/webhook`. Full
+runbook — DNS, Caddy, BotFather, dev bot + tunnel, backups, updates: [docs/deployment.md](docs/deployment.md).

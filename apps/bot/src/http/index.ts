@@ -2,8 +2,10 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { serveStatic } from '@hono/node-server/serve-static';
+import { type Bot, webhookCallback } from 'grammy';
 import { Hono } from 'hono';
 
+import type { BotContext } from '../bot/index.ts';
 import type { Config } from '../config.ts';
 import type { Db } from '../db/index.ts';
 import { offersApi } from '../features/offers/api.ts';
@@ -34,7 +36,7 @@ const webappDist = relative(
   fileURLToPath(new URL('../../../webapp/dist', import.meta.url)),
 );
 
-export function createHttp(config: Config, db: Db) {
+export function createHttp(config: Config, db: Db, bot?: Bot<BotContext>) {
   const app = new Hono()
     .onError((err, c) => {
       if (err instanceof AppError) return c.json({ error: err.code }, err.status);
@@ -44,5 +46,8 @@ export function createHttp(config: Config, db: Db) {
     .route('/api', createApi(config, db))
     .use('*', serveStatic({ root: webappDist }))
     .get('*', serveStatic({ path: join(webappDist, 'index.html') })); // SPA fallback
+  if (bot && config.BOT_MODE === 'webhook') {
+    app.post('/webhook', webhookCallback(bot, 'hono', { secretToken: config.webhookSecret }));
+  }
   return app;
 }

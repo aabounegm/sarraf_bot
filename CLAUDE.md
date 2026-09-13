@@ -42,7 +42,7 @@ packages/shared/      isomorphic — NO Node/DOM APIs. Imported by both apps as 
   locales/{en,ru,ar}.ftl Fluent catalog shared by bot and mini app (parity test in src/locales.test.ts)
 
 apps/bot/src/         one Node process: bot + API + DB
-  main.ts               boot: config → db (auto-migrate) → bot (long polling) → http
+  main.ts               boot: config → db (auto-migrate) → http → bot (polling, or setWebhook in webhook mode)
   config.ts             zod-validated env (see .env.example)
   db/                   schema.ts, index.ts (openDb); migrations in apps/bot/drizzle/
   bot/                  createBot(): plugins (session in SQLite, i18n), BotContext type
@@ -96,6 +96,8 @@ Rules of thumb:
 - Queries use the Drizzle query builder only (no raw SQL) so a Postgres move is a schema-file
   and connection change. Sync driver: use `.get()` / `.all()` / `.run()`.
 - `node:sqlite` is opened with `PRAGMA foreign_keys = ON` and WAL; tests use `':memory:'`.
+- Config: `PUBLIC_URL` is the bot's HTTPS origin (button URL + webhook + dev tunnel); `BOT_MODE`
+  `polling` (dev) or `webhook` (prod, secret = sha256 of the token, see `config.ts`).
 - Mini app auth: `Authorization: tma <initData>` header, verified server-side with HMAC
   (`apps/bot/src/http/auth.ts`); routes after `telegramAuth` read `c.get('user')`.
 - The Hono API type is exported as `Api` from `@sarraf/bot/api` (bot `package.json` exports) and imported
@@ -126,6 +128,6 @@ Not yet done, suggested order (see architecture.md → Roadmap for detail):
 4. Bot `/new` wizard (`@grammyjs/conversations`), `/mine`, take wizard from `?start=take_<id>`
 5. Scheduled jobs (DB-driven, restart-safe): expiry, 48h check-in for no-expiry offers, 12h pending auto-decline
 6. Access gating switch (`MEMBER_CHATS` via `getChatMember`), admin commands
-7. Deployment: Dockerfile, compose (bot + Caddy), SQLite backup
+7. ~~Deployment~~ ✔ — Dockerfile, compose.yml, webhook mode, docs/deployment.md (first real deploy pending)
 
 Resolved questions and their answers are at the end of docs/architecture.md.

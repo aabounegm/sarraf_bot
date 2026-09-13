@@ -10,7 +10,7 @@ import { createHttp } from '../../http/index.ts';
 
 const config = loadConfig({
   BOT_TOKEN: '123:TEST',
-  WEBAPP_URL: 'https://a.b',
+  PUBLIC_URL: 'https://a.b',
   OFFERS_CHANNEL: '@c',
 });
 const as = (user: { id: number; first_name: string }) => ({

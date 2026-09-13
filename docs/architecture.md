@@ -159,18 +159,26 @@ knows which database it talks to.
 - `pnpm check` before declaring anything done.
 - Node native TS rules: `.ts` extensions on relative imports; no enums/namespaces/parameter properties.
 
-## 9. Deployment (agreed shape, not built yet)
+## 9. Deployment
 
-- One VPS. Docker in production; plain `node` locally.
-- `bot` container: `node apps/bot/src/main.ts` with `apps/webapp/dist` built into the image;
-  serves `/api` and the Mini App. SQLite file on a named volume, env via compose. Long polling →
-  the only inbound traffic is from Caddy.
-- `caddy` container: automatic TLS and a single `reverse_proxy bot:3000`.
+Runbook: [deployment.md](deployment.md). The shape:
+
+- **One bot = one origin** (`innoexchange.bots.abounegm.com`): mini app at `/`, API at `/api`,
+  webhook at `/webhook`, all from one container. Subdomain rather than `bots.abounegm.com/<bot>`:
+  the mini app's absolute URLs (Vite `base`, `/api`, deep links) then need no path configuration,
+  dev (`localhost:5173/`) and prod have the same shape, and each bot gets its own browser origin.
+  DNS: a DNS-only (unproxied) `*.bots.abounegm.com` wildcard — Cloudflare's free edge certificate
+  cannot cover two-label names, so these hosts bypass the proxy and Caddy terminates TLS itself.
+- The host's existing Caddy terminates TLS with one `reverse_proxy 127.0.0.1:<port>` block per bot;
+  the compose file publishes the port on loopback only. No Caddy container.
+- `BOT_MODE=webhook` in production: boot calls `setWebhook(PUBLIC_URL/webhook, secret_token)`;
+  the secret is `sha256(BOT_TOKEN)`, so it needs no separate configuration and anyone who could
+  forge it already has the token. Development polls (`bot.start()` also deletes any webhook).
+- `PUBLIC_URL` is the one URL: the "Open InnoExchange" button, the webhook, and (in dev) the tunnel.
+- SQLite on a named volume; backups via `node:sqlite`'s `backup()` (WAL-safe).
 - Names are never literals: bot username comes from `getMe` (`ctx.me` / `bot.botInfo`), the
   channel from `OFFERS_CHANNEL`, the display name from the locale catalog. The Mini App short name
   (for `t.me/<bot>/<short>?startapp=` links) becomes an env var when deep links land.
-- Backups: nightly `sqlite3 .backup` (WAL-safe) of the volume to off-box storage.
-- Telegram needs an HTTPS URL for the Mini App (`WEBAPP_URL`) and the bot must be admin of `OFFERS_CHANNEL`.
 
 ## 10. Decisions log
 
@@ -195,7 +203,10 @@ knows which database it talks to.
 | 2026-09-12 | Oxlint + Oxfmt over Biome                                                                    | Owner preference                                                                                                  |
 | 2026-09-12 | Currency/method config in code, not a table                                                  | No admin UI exists; revisit if non-developers must edit                                                           |
 | 2026-09-12 | Money as integer minor units, rate as REAL                                                   | Display-only rate; exact amounts                                                                                  |
-| 2026-09-12 | Deployment: VPS + Docker + Caddy, long polling                                               | Owner decision; Dockerfile/compose added at first deploy                                                          |
+| 2026-09-12 | Deployment: VPS + Docker + Caddy                                                             | Owner decision                                                                                                    |
+| 2026-09-13 | Subdomain per bot (`<bot>.bots.abounegm.com`); TMA + API + webhook on that one origin        | Owner decision after weighing paths vs subdomains (§9)                                                            |
+| 2026-09-13 | Webhook in production, polling in dev; secret derived from the bot token                     | One `PUBLIC_URL`; no extra secret to manage                                                                       |
+| 2026-09-13 | Bot-only container; the host's existing Caddy proxies to a loopback port                     | Owner already runs Caddy on the VPS                                                                               |
 
 ## 11. Roadmap (suggested order — dependency and value)
 
@@ -209,7 +220,7 @@ knows which database it talks to.
    and the take wizard from `?start=take_<id>` (same service as the Mini App take).
 5. **Scheduler** — expiry, 48 h check-ins for no-expiry offers, auto-pause, 12 h pending auto-decline.
 6. **Access & admin** — switch on `MEMBER_CHATS` gating, per-user rate limits, admin remove/ban.
-7. **Deploy** — Dockerfile, compose (bot + Caddy), backups. Then webhooks if desired.
+7. ~~**Deploy**~~ — Dockerfile, compose, webhook mode, runbook: done 2026-09-13 (first real deploy pending).
 
 ## 12. Questions — resolved 2026-09-12
 

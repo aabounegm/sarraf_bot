@@ -1,0 +1,18 @@
+# One bot per compose project. The host's Caddy terminates TLS and proxies to the published port.
+services:
+  innoexchange:
+    build: .
+    restart: unless-stopped
+    env_file: apps/bot/.env
+    environment:
+      NODE_ENV: production
+      BOT_MODE: webhook
+      DATABASE_PATH: /data/sarraf.db
+      PORT: '3000'
+    ports:
+      - '127.0.0.1:3000:3000'
+    volumes:
+      - data:/data
+
+volumes:
+  data:

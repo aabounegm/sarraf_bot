@@ -39,7 +39,7 @@ export function createBot(config: Config, db: Db) {
         bot: ctx.me.username,
         channel: config.OFFERS_CHANNEL,
       }),
-      { reply_markup: new InlineKeyboard().webApp(ctx.t('open-app'), config.WEBAPP_URL) },
+      { reply_markup: new InlineKeyboard().webApp(ctx.t('open-app'), config.PUBLIC_URL) },
     ),
   );
 
