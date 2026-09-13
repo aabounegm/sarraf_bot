@@ -22,14 +22,14 @@ claims feature adds the take flow. Parsing: `parseStartParam` in `@sarraf/shared
 
 ## API — `apps/bot/src/features/offers/api.ts` (all behind `telegramAuth`)
 
-| Route                                       | Returns                               | Errors                                                                   |
-| ------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------ |
-| `GET /api/offers?give=USDT`                 | `OfferSummary[]`, newest first        | 400 bad currency                                                         |
-| `GET /api/offers/mine`                      | `OfferSummary[]` posted by the caller |                                                                          |
-| `POST /api/offers` body `OfferInput`        | 201 `OfferDetail`                     | 400 validation                                                           |
-| `GET /api/offers/:id`                       | `OfferDetail` (adds `claims[]`)       | 404 `offer-not-found`                                                    |
-| `PUT /api/offers/:id` body `OfferInput`     | `OfferDetail`                         | 403 `not-your-offer`, 409 `amount-below-committed`, 409 `offer-finished` |
-| `POST /api/offers/:id/{pause,resume,close}` | `OfferDetail`                         | 403, 409 `invalid-transition`                                            |
+| Route                                       | Returns                              | Errors                                                                   |
+| ------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------ |
+| `GET /api/offers?give=USDT`                 | `OfferSummary[]`, newest first       | 400 bad currency                                                         |
+| `GET /api/offers/mine`                      | `OfferDetail[]` posted by the caller |                                                                          |
+| `POST /api/offers` body `OfferInput`        | 201 `OfferDetail`                    | 400 validation                                                           |
+| `GET /api/offers/:id`                       | `OfferDetail` (adds `claims[]`)      | 404 `offer-not-found`                                                    |
+| `PUT /api/offers/:id` body `OfferInput`     | `OfferDetail`                        | 403 `not-your-offer`, 409 `amount-below-committed`, 409 `offer-finished` |
+| `POST /api/offers/:id/{pause,resume,close}` | `OfferDetail`                        | 403, 409 `invalid-transition`                                            |
 
 Errors are `{ error: <code> }` via `AppError` (`apps/bot/src/lib/app-error.ts`); the mini app maps
 codes to `error-*` strings. Amounts in requests and responses are integer minor units.
@@ -49,10 +49,7 @@ codes to `error-*` strings. Amounts in requests and responses are integer minor 
 
 ## Hook points for later phases
 
-- Claims: `close` must notify takers of declined pending requests; every claim transition must call
-  `queueChannelSync(offerId)` (the status line and the Take button depend on `availability`).
-- Claims: add the `[Take]` button in `channel.ts` `keyboard()` — `miniAppLink(bot, 'take', id)`,
-  hidden when `remaining === 0` or the offer is paused (spec § Channel).
+- Claims: `close` must notify takers of declined pending requests (see docs/features/claims.md).
 - Scheduler: expire offers with `expiresAt <= now` → status `expired` (hidden from the board), then
   `queueChannelSync` deletes the post.
 

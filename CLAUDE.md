@@ -49,14 +49,15 @@ apps/bot/src/         one Node process: bot + API + DB
   http/                 createHttp(): Hono app: /api routes + serves apps/webapp/dist (SPA fallback); auth.ts = initData verification
   lib/app-error.ts      AppError(status, code): thrown by services, mapped by http/index.ts onError
   features/offers/      service.ts (rules) · api.ts (Hono routes) · channel.ts (the channel post) · *.test.ts — the pattern for every feature
+  features/claims/      the take → confirm → done handshake; answers with the offer, syncs the post
 
 apps/webapp/src/      Feature-Sliced Design: app/ pages/ widgets/ features/ entities/ shared/
   app/main.tsx          initTelegram() → createLocalization() → createAppRouter(start_param) → <App>
   app/router.tsx        code-based TanStack routes; memory history seeded from start_param
   pages/*               one folder per screen; compose widgets/features; no data logic
   widgets/offer-card    list row used by Browse and My offers
-  features/*            offer-form (state → OfferInput), manage-offer (pause/resume/close)
-  entities/offer        model.ts (types via InferResponseType), api.ts (Query hooks), format.ts (localized text)
+  features/*            offer-form (state → OfferInput), manage-offer (pause/resume/close), manage-claim (ClaimCard/ClaimRow)
+  entities/{offer,claim} model.ts (types via InferResponseType), api.ts (Query hooks), format.ts (localized text)
   shared/api/client.ts  hc<Api>('/api') + unwrap() → ApiError(code)
   shared/lib/telegram.ts initTelegram (mocks env in dev), useMainButton/useBackButton, haptic, confirmDialog
   shared/lib/i18n.ts    Fluent bundle from @sarraf/shared/locales
@@ -115,18 +116,20 @@ Rules of thumb:
 
 ## Current state
 
-**Offers feature done (API + mini app + channel post), 2026-09-13.** See
-[docs/features/offers.md](docs/features/offers.md). Working: create/browse/detail/edit/pause/resume/close
-via `/api/offers*` and the mini app pages (TanStack Router + Query, typed `hc<Api>` client); every
-mutation re-renders the channel post (`features/offers/channel.ts`); bot answers `/start`;
-dev-in-browser works end to end (`/api/dev/init-data`). `pnpm check` is green (17 bot tests, 7 shared).
-Never verified against a real channel yet — the bot must be an admin of `OFFERS_CHANNEL`.
+**Offers + channel post + the mini app half of claims, 2026-09-13.** See
+[docs/features/offers.md](docs/features/offers.md) and [docs/features/claims.md](docs/features/claims.md).
+Working: create/browse/detail/edit/pause/resume/close, take → confirm/decline → two-sided done,
+"Your requests", contact gating; every mutation re-renders the channel post (verified against a real
+channel); bot answers `/start`. Dev-in-browser works end to end — `?user=2` in the URL gives a second
+identity, which is how the handshake is tested from one machine. `pnpm check` is green (25 bot tests,
+7 shared). The bot half of claims (notifications, Confirm/Decline buttons) is not built yet.
 
 Not yet done, suggested order (see architecture.md → Roadmap for detail):
 
 1. ~~Offers core~~ ✔
 2. ~~Channel post sync~~ ✔
-3. Claims handshake (take → confirm/decline → two-sided done; bot notifications; "Your requests" in My offers)
+3. Claims handshake — mini app ✔; **next: the bot half** (request notifications, Confirm/Decline,
+   two-sided Done, stale-button idempotency) — hook points in docs/features/claims.md
 4. Bot `/new` wizard (`@grammyjs/conversations`), `/mine`, take wizard from `?start=take_<id>`
 5. Scheduled jobs (DB-driven, restart-safe): expiry, 48h check-in for no-expiry offers, 12h pending auto-decline
 6. Access gating switch (`MEMBER_CHATS` via `getChatMember`), admin commands

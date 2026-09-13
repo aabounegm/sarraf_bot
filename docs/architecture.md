@@ -214,6 +214,10 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-13 | Channel posts are English only (`i18n.t('en', …)`)                                           | One post, one mixed-language audience; per-poster locales would make the channel a language soup                  |
 | 2026-09-13 | Channel sync is an in-process promise queue keyed by offer id, wired at boot                 | One process owns the channel; a DB-backed outbox buys durability the product does not need yet                    |
 | 2026-09-13 | Paused offers leave the browse list (they stay in My offers and keep their post)             | Owner: nothing on the board should be untakeable                                                                  |
+| 2026-09-13 | Handles are only in `getOffer(…, viewerId)` / `listClaimsByTaker`, never in list payloads    | Contact gating has to hold in the payload, not only in the UI — the mini app is a client                          |
+| 2026-09-13 | A release is recorded as `declined` by the poster, `cancelled` by the taker                  | Same effect on availability; the taker's list should say honestly which happened                                  |
+| 2026-09-13 | Claim routes answer with the whole `OfferDetail`                                             | One response refreshes the claim, the availability and the other takers; no second round trip                     |
+| 2026-09-13 | `/api/dev/init-data?user=2` issues a second fake identity in development                     | A two-sided handshake cannot be tested from one browser profile otherwise                                         |
 
 ## 11. Roadmap (suggested order — dependency and value)
 
@@ -222,8 +226,9 @@ Runbook: [deployment.md](deployment.md). The shape:
    Router + Query, typed `hc<Api>` client. Deep links `startapp=offer_<id>`.
 2. ~~**Channel sync**~~ — render, edit in place, delete, coalescing queue, 429 retry: done 2026-09-13
    (`features/offers/channel.ts`). No bumping; Take button waits for claims.
-3. **Claims handshake** — take (Mini App) → poster Confirm/Decline (bot) → two-sided Done →
-   channel update; cancel/release; contact gating (username revealed only after confirm); idempotent stale buttons.
+3. **Claims handshake** — service, API and Mini App done 2026-09-13 (`features/claims`, take screen,
+   claim cards, "Your requests"); contact gating and the channel's Take button included. Still to do:
+   the bot half — request notifications with Confirm/Decline, two-sided Done, idempotent stale buttons.
 4. **Bot parity** — `/new` wizard via `@grammyjs/conversations`, `/mine`, reply keyboard, `/board`,
    and the take wizard from `?start=take_<id>` (same service as the Mini App take).
 5. **Scheduler** — expiry, 48 h check-ins for no-expiry offers, auto-pause, 12 h pending auto-decline.
