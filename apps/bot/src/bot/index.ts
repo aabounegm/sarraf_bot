@@ -1,11 +1,9 @@
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-import { I18n, type I18nFlavor } from '@grammyjs/i18n';
+import type { I18nFlavor } from '@grammyjs/i18n';
 import { Bot, type Context, InlineKeyboard, type SessionFlavor, session } from 'grammy';
 
 import type { Config } from '../config.ts';
 import type { Db } from '../db/index.ts';
+import { i18n } from './i18n.ts';
 import { sqliteStorage } from './session.ts';
 
 /** Grows per feature. `__language_code` is written by @grammyjs/i18n (useSession). */
@@ -15,22 +13,11 @@ export interface SessionData {
 
 export type BotContext = Context & SessionFlavor<SessionData> & I18nFlavor;
 
-// The bot and the mini app read the same Fluent files from @sarraf/shared.
-const localesDir = dirname(fileURLToPath(import.meta.resolve('@sarraf/shared/locales/en.ftl')));
-
 export function createBot(config: Config, db: Db) {
   const bot = new Bot<BotContext>(config.BOT_TOKEN);
 
   bot.use(session({ initial: (): SessionData => ({}), storage: sqliteStorage<SessionData>(db) }));
-  bot.use(
-    new I18n<BotContext>({
-      defaultLocale: 'en',
-      directory: localesDir,
-      useSession: true,
-      // Telegram renders plain text: Fluent's bidi isolation marks would break @mention autolinking.
-      fluentBundleOptions: { useIsolating: false },
-    }),
-  );
+  bot.use(i18n);
 
   bot.command('start', (ctx) =>
     ctx.reply(
