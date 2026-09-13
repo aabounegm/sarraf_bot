@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server';
 import { createBot } from './bot/index.ts';
 import { loadConfig } from './config.ts';
 import { openDb } from './db/index.ts';
+import { flushClaimNotifications, startClaimNotifications } from './features/claims/notify.ts';
 import { flushChannelSync, startChannelSync } from './features/offers/channel.ts';
 import { createHttp } from './http/index.ts';
 
@@ -20,6 +21,7 @@ startChannelSync({
   chat: config.OFFERS_CHANNEL,
   botUsername: bot.botInfo.username,
 });
+startClaimNotifications({ api: bot.api, db });
 
 serve({ fetch: http.fetch, port: config.PORT }, (info) =>
   console.log(`http listening on :${info.port}`),
@@ -36,5 +38,6 @@ if (config.BOT_MODE === 'webhook') {
 for (const signal of ['SIGINT', 'SIGTERM'] as const)
   process.once(signal, async () => {
     await bot.stop();
-    await flushChannelSync(); // let the last post land instead of drifting until the next edit
+    // Let the last post and DM land instead of drifting until the next change.
+    await Promise.all([flushChannelSync(), flushClaimNotifications()]);
   });

@@ -3,6 +3,7 @@ import { Bot, type Context, InlineKeyboard, type SessionFlavor, session } from '
 
 import type { Config } from '../config.ts';
 import type { Db } from '../db/index.ts';
+import { claimsBot } from '../features/claims/bot.ts';
 import { i18n } from './i18n.ts';
 import { sqliteStorage } from './session.ts';
 
@@ -18,6 +19,8 @@ export function createBot(config: Config, db: Db) {
 
   bot.use(session({ initial: (): SessionData => ({}), storage: sqliteStorage<SessionData>(db) }));
   bot.use(i18n);
+
+  bot.use(claimsBot(db));
 
   bot.command('start', (ctx) =>
     ctx.reply(

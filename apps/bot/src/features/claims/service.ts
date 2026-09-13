@@ -6,6 +6,7 @@ import type { TelegramUser } from '../../http/auth.ts';
 import { AppError } from '../../lib/app-error.ts';
 import { queueChannelSync } from '../offers/channel.ts';
 import { type OfferDetail, ensureUser, getOffer } from '../offers/service.ts';
+import { notifyClaim } from './notify.ts';
 
 const { users, offers, claims } = schema;
 type ClaimRow = typeof claims.$inferSelect;
@@ -28,6 +29,7 @@ export interface MyClaim {
 const OPEN: ClaimStatus[] = ['pending', 'confirmed'];
 
 export function createClaim(db: Db, taker: TelegramUser, input: ClaimInput): OfferDetail {
+  let claimId = 0;
   const offer = db.transaction((tx) => {
     ensureUser(tx, taker);
     const row = tx.select().from(offers).where(eq(offers.id, input.offerId)).get();
@@ -38,17 +40,20 @@ export function createClaim(db: Db, taker: TelegramUser, input: ClaimInput): Off
     if (openClaimOf(tx, row.id, taker.id)) throw new AppError(409, 'already-claimed');
     if (input.amount > remainingOf(tx, row)) throw new AppError(409, 'amount-exceeds-remaining');
 
-    tx.insert(claims)
+    claimId = tx
+      .insert(claims)
       .values({
         offerId: row.id,
         takerId: taker.id,
         amount: input.amount,
         method: input.method,
       })
-      .run();
+      .returning()
+      .get().id;
     return getOffer(tx, row.id, taker.id);
   });
   queueChannelSync(offer.id); // a pending request shows as "awaiting confirmation" in the channel
+  notifyClaim(claimId, { action: 'requested', by: 'taker' });
   return offer;
 }
 
@@ -69,6 +74,7 @@ export function applyClaimAction(
   claimId: number,
   action: ClaimAction,
 ): OfferDetail {
+  let actor: 'poster' | 'taker' = 'poster';
   const offer = db.transaction((tx) => {
     const claim = tx.select().from(claims).where(eq(claims.id, claimId)).get();
     if (!claim) throw new AppError(404, 'claim-not-found');
@@ -78,6 +84,7 @@ export function applyClaimAction(
     if (role === null || (rule.by !== 'both' && rule.by !== role)) {
       throw new AppError(403, 'not-your-claim');
     }
+    actor = role;
     if (!rule.from.includes(claim.status)) throw new AppError(409, 'invalid-transition');
 
     if (action === 'done') markDone(tx, claim, row, role);
@@ -93,6 +100,7 @@ export function applyClaimAction(
     return getOffer(tx, row.id, userId);
   });
   queueChannelSync(offer.id);
+  notifyClaim(claimId, { action, by: actor });
   return offer;
 }
 
