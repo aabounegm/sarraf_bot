@@ -6,6 +6,8 @@ import { AppRoot } from '@telegram-apps/telegram-ui';
 import '@telegram-apps/telegram-ui/dist/styles.css';
 import type { createAppRouter } from './router.tsx';
 
+import './styles.css';
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 10_000 } },
 });
@@ -20,7 +22,7 @@ export function App({
   return (
     <LocalizationProvider l10n={l10n}>
       <QueryClientProvider client={queryClient}>
-        <AppRoot>
+        <AppRoot className="app">
           <RouterProvider router={router} />
         </AppRoot>
       </QueryClientProvider>

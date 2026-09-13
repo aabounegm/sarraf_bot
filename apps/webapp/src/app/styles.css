@@ -1,0 +1,11 @@
+/* telegram-ui sets the font only on its own Typography components, so plain text nodes and
+   form controls fall back to the browser default (serif). AppRoot declares the variable. */
+.app {
+  font-family: var(--tgui--font-family);
+}
+
+.app input,
+.app textarea,
+.app button {
+  font-family: inherit;
+}
