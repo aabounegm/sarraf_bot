@@ -40,7 +40,7 @@ export function OfferCard({
       }
       after={
         after ?? (
-          <span style={{ color: 'var(--tg-theme-hint-color)', fontSize: 13 }}>
+          <span style={{ color: 'var(--tg-theme-hint-color)', fontSize: 13, whiteSpace: 'nowrap' }}>
             {expiryText(l10n, offer.expiresAt)}
           </span>
         )

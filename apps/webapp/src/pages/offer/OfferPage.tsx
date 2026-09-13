@@ -27,9 +27,10 @@ import { OfferActions } from '../../features/manage-offer/OfferActions.tsx';
 import { getCurrentUserId } from '../../shared/lib/telegram.ts';
 import { Page } from '../../shared/ui/Page.tsx';
 
+/** Under the row label, not in the Cell's `after` slot: a long method list has to wrap. */
 function MethodChips({ methods }: { methods: string[] }) {
   return (
-    <span style={{ display: 'inline-flex', gap: 6 }}>
+    <span style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 4 }}>
       {methods.map((m) => (
         <Chip key={m} mode="outline">
           {m}
@@ -123,10 +124,12 @@ export function OfferPage() {
       )}
 
       <Section header={l10n.getString('details')}>
-        <Cell after={<MethodChips methods={o.giveMethods} />}>
+        <Cell multiline description={<MethodChips methods={o.giveMethods} />}>
           {l10n.getString('gives', { name: o.poster.firstName })}
         </Cell>
-        <Cell after={<MethodChips methods={o.getMethods} />}>{l10n.getString('accepts')}</Cell>
+        <Cell multiline description={<MethodChips methods={o.getMethods} />}>
+          {l10n.getString('accepts')}
+        </Cell>
         <Cell after={l10n.getString('allowed')}>{l10n.getString('partial-amounts')}</Cell>
         <Cell after={expiryDateText(l10n, o.expiresAt)}>{l10n.getString('expiry')}</Cell>
       </Section>
