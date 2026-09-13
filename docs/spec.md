@@ -9,7 +9,7 @@
 
 InnoExchange lets members of a trusted community (Arabic-speaking residents of Innopolis, Russia; English UI for now) post offers to exchange currency between individuals. The bot is a **notice board, not a middleman**: it never holds funds, never escrows, and does not anonymise anyone. Its job is to (1) make posting structured, (2) tell people whether an offer is _actually still available_ before they DM the poster, (3) keep one channel post per offer permanently in sync with the offer's state, and (4) support partial fills by multiple takers.
 
-Product names: bot display name **InnoExchange**, bot username **@SarrafBot**, offers channel **@innoexchange** (placeholder — adjust).
+Product names: bot display name **InnoExchange**, bot username **@innoexchange_bot**, offers channel **@innoexchange** (placeholder — adjust).
 
 ## About the design files
 
@@ -85,7 +85,7 @@ Options on create: 6h / 12h / 24h / 48h / None. Channel posts are static text, s
 
 ## Surfaces & screens
 
-### A. Mini app (`@SarrafBot/app`)
+### A. Mini app (`@innoexchange_bot/app`)
 
 Use the Telegram WebApp SDK: `themeParams` → CSS vars, `MainButton` for the primary action on every screen, `BackButton` on sub-screens, `HapticFeedback` on confirm/decline, validate `initData` server-side, handle `start_param` deep links (`offer_1042`, `take_1042`).
 
@@ -126,7 +126,7 @@ RUB: SBP, Tinkoff
 [Take] [Open in InnoExchange]
 ```
 
-- **Buttons**: channel posts cannot carry `web_app` buttons, so both must be `url` deep links: Take → `https://t.me/SarrafBot/app?startapp=take_1042` (or `https://t.me/SarrafBot?start=take_1042` for the bot flow); Open → `…?startapp=offer_1042`. Hide Take when remaining = 0 or paused.
+- **Buttons**: channel posts cannot carry `web_app` buttons, so both must be `url` deep links: Take → `https://t.me/innoexchange_bot/app?startapp=take_1042` (or `https://t.me/innoexchange_bot?start=take_1042` for the bot flow); Open → `…?startapp=offer_1042`. Hide Take when remaining = 0 or paused.
 - **Partial fill ⇒ bump**: delete the old post and send a fresh one (so it appears at the bottom, re-notifying subscribers); update `channelMessageId`. (Alternative if bumps get noisy: edit in place only, bump at most once per 6h.)
 - **Completion / close / expiry ⇒ delete** the post. Bots can edit and delete their own channel messages without the 48h limit.
 - Bumping/editing must be rate-limit aware (queue edits, coalesce bursts).

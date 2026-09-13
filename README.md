@@ -10,7 +10,7 @@ Three surfaces, one backend:
 
 | Surface                       | What it is                                                                                          |
 | ----------------------------- | --------------------------------------------------------------------------------------------------- |
-| **Bot** (`@SarrafBot`)        | `/start`, step-by-step `/new`, `/mine`, and all handshake notifications (request → confirm → done). |
+| **Bot** (`@innoexchange_bot`) | `/start`, step-by-step `/new`, `/mine`, and all handshake notifications (request → confirm → done). |
 | **Mini App**                  | The board: browse, offer detail, take, create/edit, my offers. React + TelegramUI.                  |
 | **Channel** (`@innoexchange`) | One bot-authored post per offer, edited on every state change, deleted on completion.               |
 

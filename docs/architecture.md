@@ -216,7 +216,7 @@ knows which database it talks to.
 1. Access: open to everyone at first; `MEMBER_CHATS` gating later.
 2. Unanswered pending requests: auto-decline after 12 h (scheduler, DB-driven, restart-safe).
 3. Partial fill: edit the channel post in place; no bumping.
-4. `@SarrafBot` / `@innoexchange` stay as placeholders, sourced from `getMe` / env — never literals.
+4. `@innoexchange_bot` / `@innoexchange` stay as placeholders, sourced from `getMe` / env — never literals.
 5. Take from the channel: Mini App first (one implementation to ship the loop); the bot-chat take
    wizard joins the bot-parity phase, reusing the same service. Nothing is wrong with the bot flow —
    it is a second implementation of the same form, so it follows rather than leads.

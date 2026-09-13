@@ -20,7 +20,7 @@ test('/start replies in the user language with an "open app" button', async () =
     id: 123,
     is_bot: true,
     first_name: 'InnoExchange',
-    username: 'SarrafBot',
+    username: 'innoexchange_bot',
   } as UserFromGetMe;
   const calls: { method: string; payload: unknown }[] = [];
   bot.api.config.use((_prev, method, payload) => {
@@ -45,7 +45,7 @@ test('/start replies in the user language with an "open app" button', async () =
     text: string;
     reply_markup: { inline_keyboard: { web_app: { url: string } }[][] };
   };
-  assert.match(payload.text, /Привет, Nour\. InnoExchange \(@SarrafBot\)/);
+  assert.match(payload.text, /Привет, Nour\. InnoExchange \(@innoexchange_bot\)/);
   assert.equal(payload.reply_markup.inline_keyboard[0]?.[0]?.web_app.url, config.WEBAPP_URL);
 });
 
