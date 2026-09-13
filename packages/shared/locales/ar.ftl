@@ -45,9 +45,13 @@ hours-left = بقي { $hours } س
 hours-short = { $hours } س
 no-expiry = بلا انتهاء
 expires-at = ينتهي { $when }
+today = اليوم
+tomorrow = غداً
 rate-fixed = 1 { $base } = { $rate } { $quote }
 rate-asking = المطلوب: 1 { $base } ≈ { $rate } { $quote } · قابل للتفاوض
 rate-open = السعر قابل للتفاوض
+status-active = نشط
+status-partial = مكتمل جزئياً
 status-paused = متوقف مؤقتاً
 status-closed = مغلق
 status-completed = مكتمل
@@ -91,3 +95,9 @@ resume = استئناف
 edit = تعديل
 close = إغلاق
 close-confirm = إغلاق هذا العرض؟ ستُرفض الطلبات المعلّقة ويُحذف منشور القناة.
+
+## Channel
+channel-title = { $name } يعطي { $amount } { $give } مقابل { $get }
+channel-methods = { $currency }: { $methods }
+channel-total = ≈ { $total } { $currency }
+awaiting-confirmation = { $amount } مطلوب، بانتظار التأكيد

@@ -42,9 +42,13 @@ hours-left = { $hours }h left
 hours-short = { $hours }h
 no-expiry = no expiry
 expires-at = expires { $when }
+today = today
+tomorrow = tomorrow
 rate-fixed = 1 { $base } = { $rate } { $quote }
 rate-asking = Asking 1 { $base } ≈ { $rate } { $quote } · negotiable
 rate-open = Rate negotiable
+status-active = Active
+status-partial = Partially filled
 status-paused = Paused
 status-closed = Closed
 status-completed = Completed
@@ -88,3 +92,9 @@ resume = Resume
 edit = Edit
 close = Close
 close-confirm = Close this offer? Pending requests will be declined and the channel post removed.
+
+## Channel
+channel-title = { $name } gives { $amount } { $give } for { $get }
+channel-methods = { $currency }: { $methods }
+channel-total = ≈ { $total } { $currency }
+awaiting-confirmation = { $amount } requested, awaiting confirmation

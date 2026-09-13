@@ -97,3 +97,7 @@ export function parseStartParam(value: string | undefined): StartParam | null {
   const m = /^(offer|take)_(\d+)$/.exec(value ?? '');
   return m ? { kind: m[1] as StartParam['kind'], offerId: Number(m[2]) } : null;
 }
+
+/** Link that opens the mini app on an offer; short name `app` is set in BotFather (docs/deployment.md). */
+export const miniAppLink = (bot: string, kind: StartParam['kind'], offerId: number) =>
+  `https://t.me/${bot}/app?startapp=${startParam(kind, offerId)}`;

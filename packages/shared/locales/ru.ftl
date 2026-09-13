@@ -43,9 +43,13 @@ hours-left = осталось { $hours } ч
 hours-short = { $hours } ч
 no-expiry = бессрочно
 expires-at = истекает { $when }
+today = сегодня
+tomorrow = завтра
 rate-fixed = 1 { $base } = { $rate } { $quote }
 rate-asking = Запрос: 1 { $base } ≈ { $rate } { $quote } · договорной
 rate-open = Курс договорной
+status-active = Активно
+status-partial = Частично заполнено
 status-paused = На паузе
 status-closed = Закрыто
 status-completed = Завершено
@@ -89,3 +93,9 @@ resume = Возобновить
 edit = Изменить
 close = Закрыть
 close-confirm = Закрыть предложение? Ожидающие запросы будут отклонены, а пост в канале удалён.
+
+## Channel
+channel-title = { $name } отдаёт { $amount } { $give } за { $get }
+channel-methods = { $currency }: { $methods }
+channel-total = ≈ { $total } { $currency }
+awaiting-confirmation = запрошено { $amount }, ожидает подтверждения
