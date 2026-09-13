@@ -98,9 +98,15 @@ function expiry(expiresAt: number | null): string {
   });
 }
 
-// Take lands on a screen that does not exist yet; it arrives with the claims feature.
-const keyboard = (offerId: number, botUsername: string) =>
-  new InlineKeyboard().url(t('open-app'), miniAppLink(botUsername, 'offer', offerId));
+/** Channel posts cannot carry web_app buttons, so both are deep links into the mini app. */
+function keyboard(o: OfferDetail, botUsername: string) {
+  const buttons = new InlineKeyboard();
+  // Nothing to take on a paused or fully-claimed offer; the post stays, the button goes.
+  if (o.status === 'active' && o.availability.remaining > 0) {
+    buttons.url(t('take'), miniAppLink(botUsername, 'take', o.id));
+  }
+  return buttons.url(t('open-app'), miniAppLink(botUsername, 'offer', o.id));
+}
 
 // --- sync ---
 
@@ -134,6 +140,7 @@ export function queueChannelSync(offerId: number) {
     } catch (err) {
       console.error(`channel sync failed for offer ${offerId}`, err);
     }
+    return null;
   });
 }
 
@@ -163,7 +170,7 @@ async function syncOne(offerId: number) {
   const text = renderOffer(offer);
   const options = {
     parse_mode: 'HTML' as const,
-    reply_markup: keyboard(offerId, botUsername),
+    reply_markup: keyboard(offer, botUsername),
     link_preview_options: { is_disabled: true },
   };
 

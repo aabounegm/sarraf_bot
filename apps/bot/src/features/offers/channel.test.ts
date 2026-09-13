@@ -23,17 +23,20 @@ const input: OfferInput = {
   note: 'Technopark lobby',
 };
 
+type Options = { reply_markup: { inline_keyboard: { text: string }[][] } };
+const labels = (o: Options) => o.reply_markup.inline_keyboard.flat().map((b) => b.text);
+
 /** Records what would go to Telegram; message ids count up from 100. */
 function stubApi() {
-  const calls: { method: string; text?: string; messageId?: number }[] = [];
+  const calls: { method: string; text?: string; messageId?: number; buttons?: string[] }[] = [];
   let nextId = 100;
   const api = {
-    sendMessage: (_chat: string, text: string) => {
-      calls.push({ method: 'send', text });
+    sendMessage: (_chat: string, text: string, options: Options) => {
+      calls.push({ method: 'send', text, buttons: labels(options) });
       return Promise.resolve({ message_id: nextId++ });
     },
-    editMessageText: (_chat: string, messageId: number, text: string) => {
-      calls.push({ method: 'edit', text, messageId });
+    editMessageText: (_chat: string, messageId: number, text: string, options: Options) => {
+      calls.push({ method: 'edit', text, messageId, buttons: labels(options) });
       return Promise.resolve({ message_id: messageId });
     },
     deleteMessage: (_chat: string, messageId: number) => {
@@ -126,10 +129,12 @@ test('publishes on create, edits in place on change, deletes when closed', async
     ['send'],
   );
   assert.equal(messageId(db, offer.id), 100);
+  assert.deepEqual(calls[0]?.buttons, ['Take', 'Open InnoExchange']);
 
   applyOfferAction(db, alex.id, offer.id, 'pause');
   await flushChannelSync();
   assert.equal(calls.at(-1)?.method, 'edit');
+  assert.deepEqual(calls.at(-1)?.buttons, ['Open InnoExchange'], 'nothing to take while paused');
   assert.equal(calls.at(-1)?.messageId, 100);
   assert.ok(calls.at(-1)?.text?.includes('● Paused'));
 
