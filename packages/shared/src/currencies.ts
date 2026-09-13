@@ -5,7 +5,7 @@ export type Currency = (typeof CURRENCY_CODES)[number];
 /** Payment methods (networks for USDT) a user can pick for each currency. */
 export const CURRENCY_METHODS: Record<Currency, readonly string[]> = {
   USDT: ['ByBit', 'Binance', 'TRC20', 'TON', 'BEP20', 'ERC20'],
-  USD: ['Cash', 'Wise', 'Zelle'],
+  USD: ['Cash', 'Wise', 'ACH', 'Zelle'],
   EUR: ['Cash', 'SEPA', 'Revolut'],
   AED: ['Cash', 'Bank transfer'],
   RUB: ['SBP', 'Tinkoff', 'Sber', 'Cash'],
