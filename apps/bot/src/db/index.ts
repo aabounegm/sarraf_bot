@@ -22,4 +22,6 @@ export function openDb(path: string) {
 }
 
 export type Db = ReturnType<typeof openDb>;
+/** Either the database or a transaction handle — service internals accept both. */
+export type DbOrTx = Db | Parameters<Parameters<Db['transaction']>[0]>[0];
 export { schema };

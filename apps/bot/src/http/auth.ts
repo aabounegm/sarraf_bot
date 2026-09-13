@@ -55,9 +55,11 @@ export function verifyInitData(
   return user ? (JSON.parse(user) as TelegramUser) : null;
 }
 
+export type AuthEnv = { Variables: { user: TelegramUser } };
+
 /** Expects `Authorization: tma <initData>`; sets `c.get('user')` or responds 401. */
 export const telegramAuth = (botToken: string) =>
-  createMiddleware<{ Variables: { user: TelegramUser } }>(async (c, next) => {
+  createMiddleware<AuthEnv>(async (c, next) => {
     const header = c.req.header('authorization') ?? '';
     const user = header.startsWith('tma ') ? verifyInitData(header.slice(4), botToken) : null;
     if (!user) return c.json({ error: 'unauthorized' }, 401);

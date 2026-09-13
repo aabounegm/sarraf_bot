@@ -2,6 +2,9 @@
   "name": "@sarraf/bot",
   "private": true,
   "type": "module",
+  "exports": {
+    "./api": "./src/http/index.ts"
+  },
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env src/main.ts",
     "start": "node --env-file-if-exists=.env src/main.ts",
@@ -12,6 +15,7 @@
   "dependencies": {
     "@grammyjs/i18n": "^1.1.2",
     "@hono/node-server": "^2.1.1",
+    "@hono/zod-validator": "^0.9.1",
     "@sarraf/shared": "workspace:^",
     "drizzle-orm": "1.0.0-rc.4",
     "grammy": "^1.46.0",
