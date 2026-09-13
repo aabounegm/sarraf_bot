@@ -42,7 +42,11 @@ export function BrowsePage() {
             </Chip>
           ))}
         </div>
-        {offers.isPending && <Spinner size="m" />}
+        {offers.isPending && (
+          <Placeholder>
+            <Spinner size="m" />
+          </Placeholder>
+        )}
         {offers.data?.length === 0 && (
           <Placeholder
             header={l10n.getString('no-offers')}

@@ -67,7 +67,9 @@ export function OfferPage() {
   if (offer.isPending)
     return (
       <Page back>
-        <Spinner size="l" />
+        <Placeholder>
+          <Spinner size="l" />
+        </Placeholder>
       </Page>
     );
   if (!offer.data)

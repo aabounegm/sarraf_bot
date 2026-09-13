@@ -23,7 +23,11 @@ export function MyOffersPage() {
         </SegmentedControl>
       </div>
       <Section header={l10n.getString('posted-by-you')}>
-        {offers.isPending && <Spinner size="m" />}
+        {offers.isPending && (
+          <Placeholder>
+            <Spinner size="m" />
+          </Placeholder>
+        )}
         {offers.data?.length === 0 && <Placeholder header={l10n.getString('no-my-offers')} />}
         <List>
           {offers.data?.map((o) => (
