@@ -42,13 +42,13 @@ packages/shared/      isomorphic — NO Node/DOM APIs. Imported by both apps as 
   locales/{en,ru,ar}.ftl Fluent catalog shared by bot and mini app (parity test in src/locales.test.ts)
 
 apps/bot/src/         one Node process: bot + API + DB
-  main.ts               boot: config → db (auto-migrate) → http → bot (polling, or setWebhook in webhook mode)
+  main.ts               boot: config → db (auto-migrate) → getMe + channel queue → http → bot (polling or webhook)
   config.ts             zod-validated env (see .env.example)
   db/                   schema.ts, index.ts (openDb); migrations in apps/bot/drizzle/
-  bot/                  createBot(): plugins (session in SQLite, i18n), BotContext type
+  bot/                  createBot(): plugins (session in SQLite, i18n), BotContext type; i18n.ts = the shared Fluent instance
   http/                 createHttp(): Hono app: /api routes + serves apps/webapp/dist (SPA fallback); auth.ts = initData verification
   lib/app-error.ts      AppError(status, code): thrown by services, mapped by http/index.ts onError
-  features/offers/      service.ts (rules) · api.ts (Hono routes) · *.test.ts — the pattern for every feature
+  features/offers/      service.ts (rules) · api.ts (Hono routes) · channel.ts (the channel post) · *.test.ts — the pattern for every feature
 
 apps/webapp/src/      Feature-Sliced Design: app/ pages/ widgets/ features/ entities/ shared/
   app/main.tsx          initTelegram() → createLocalization() → createAppRouter(start_param) → <App>
@@ -115,15 +115,17 @@ Rules of thumb:
 
 ## Current state
 
-**Offers feature done (API + mini app), 2026-09-12.** See [docs/features/offers.md](docs/features/offers.md).
-Working: create/browse/detail/edit/pause/resume/close via `/api/offers*` and the mini app pages
-(TanStack Router + Query, typed `hc<Api>` client); bot answers `/start`; dev-in-browser works end
-to end (`/api/dev/init-data`). `pnpm check` is green (12 bot tests, 7 shared).
+**Offers feature done (API + mini app + channel post), 2026-09-13.** See
+[docs/features/offers.md](docs/features/offers.md). Working: create/browse/detail/edit/pause/resume/close
+via `/api/offers*` and the mini app pages (TanStack Router + Query, typed `hc<Api>` client); every
+mutation re-renders the channel post (`features/offers/channel.ts`); bot answers `/start`;
+dev-in-browser works end to end (`/api/dev/init-data`). `pnpm check` is green (17 bot tests, 7 shared).
+Never verified against a real channel yet — the bot must be an admin of `OFFERS_CHANNEL`.
 
 Not yet done, suggested order (see architecture.md → Roadmap for detail):
 
 1. ~~Offers core~~ ✔
-2. Channel post sync (render + edit in place / delete, rate-limit aware; no bumping) — hook points listed in docs/features/offers.md
+2. ~~Channel post sync~~ ✔
 3. Claims handshake (take → confirm/decline → two-sided done; bot notifications; "Your requests" in My offers)
 4. Bot `/new` wizard (`@grammyjs/conversations`), `/mine`, take wizard from `?start=take_<id>`
 5. Scheduled jobs (DB-driven, restart-safe): expiry, 48h check-in for no-expiry offers, 12h pending auto-decline

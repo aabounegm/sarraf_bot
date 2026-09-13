@@ -3,19 +3,19 @@
 Posting, browsing, editing, pausing/resuming and closing swap offers.
 Spec: [spec.md](../spec.md) → Domain model, Mini app screens 1/2/4/5, Business rules.
 
-**Status (2026-09-12):** API + mini app done. Bot entry points, channel post and the expiry job
-belong to later phases (see the table — "pending" cells are the drift checklist).
+**Status (2026-09-13):** API, mini app and the channel post done. Bot entry points and the expiry
+job belong to later phases (see the table — "pending" cells are the drift checklist).
 
 ## The same feature on each surface
 
-| Action                 | Mini app                                                                                                        | Bot chat                                           | Channel                                              |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------- |
-| Browse                 | `/` `BrowsePage` — chips filter by give currency; only `active` offers (paused/finished ones live in My offers) | `/board` → opens the app _(pending)_               | —                                                    |
-| Detail                 | `/offers/$offerId` `OfferPage` — header, progress (filled grey / reserved amber), details, note, other takers   | —                                                  | one post per offer _(pending, channel-sync feature)_ |
-| Create                 | `/offers/new` `OfferForm`                                                                                       | `/new` step-by-step wizard _(pending, bot-parity)_ | post created _(pending)_                             |
-| Edit                   | `/offers/$offerId/edit`                                                                                         | Edit button under `/mine` cards _(pending)_        | post re-rendered _(pending)_                         |
-| Pause / Resume / Close | `OfferActions` on detail (own offers) and on My offers                                                          | buttons under `/mine` cards _(pending)_            | "Paused" line / post deleted _(pending)_             |
-| My offers              | `/my` `MyOffersPage` (Your requests section arrives with claims)                                                | `/mine` _(pending)_                                | —                                                    |
+| Action                 | Mini app                                                                                                        | Bot chat                                           | Channel                                 |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------- |
+| Browse                 | `/` `BrowsePage` — chips filter by give currency; only `active` offers (paused/finished ones live in My offers) | `/board` → opens the app _(pending)_               | —                                       |
+| Detail                 | `/offers/$offerId` `OfferPage` — header, progress (filled grey / reserved amber), details, note, other takers   | —                                                  | one post per offer, `channel.ts`        |
+| Create                 | `/offers/new` `OfferForm`                                                                                       | `/new` step-by-step wizard _(pending, bot-parity)_ | post published on create                |
+| Edit                   | `/offers/$offerId/edit`                                                                                         | Edit button under `/mine` cards _(pending)_        | post edited in place                    |
+| Pause / Resume / Close | `OfferActions` on detail (own offers) and on My offers                                                          | buttons under `/mine` cards _(pending)_            | "● Paused" line / post deleted on close |
+| My offers              | `/my` `MyOffersPage` (Your requests section arrives with claims)                                                | `/mine` _(pending)_                                | —                                       |
 
 Deep links: `startapp=offer_<id>` → `/offers/<id>`; `take_<id>` lands on the same page until the
 claims feature adds the take flow. Parsing: `parseStartParam` in `@sarraf/shared`.
@@ -49,9 +49,23 @@ codes to `error-*` strings. Amounts in requests and responses are integer minor 
 
 ## Hook points for later phases
 
-- Channel sync: call `syncChannelPost(offerId)` at the end of `createOffer`, `updateOffer`, `applyOfferAction`.
-- Claims: `close` must notify takers of declined pending requests.
-- Scheduler: expire offers with `expiresAt <= now` → status `expired` (hidden from the board).
+- Claims: `close` must notify takers of declined pending requests; every claim transition must call
+  `queueChannelSync(offerId)` (the status line and the Take button depend on `availability`).
+- Claims: add the `[Take]` button in `channel.ts` `keyboard()` — `miniAppLink(bot, 'take', id)`,
+  hidden when `remaining === 0` or the offer is paused (spec § Channel).
+- Scheduler: expire offers with `expiresAt <= now` → status `expired` (hidden from the board), then
+  `queueChannelSync` deletes the post.
+
+## Channel — `apps/bot/src/features/offers/channel.ts`
+
+`queueChannelSync(offerId)` is called at the end of `createOffer` / `updateOffer` /
+`applyOfferAction`; `startChannelSync({ api, db, chat, botUsername })` wires it in `main.ts` after
+`bot.init()` (before that — tests, scripts — queueing is a no-op). One post per offer, id stored in
+`offers.channelMessageId`: published on the first sync, edited afterwards, deleted (and the id
+cleared) once the offer is closed / completed / expired. If the post was removed in the channel by
+hand, the next sync republishes it. Post body: title, rate + total, one methods line per side,
+italic note, `● Status — availability`, contention line, `#id · poster, N deals · expires …`
+(community timezone, English — see the decisions log). `flushChannelSync()` awaits the queue.
 
 ## Mini app files
 

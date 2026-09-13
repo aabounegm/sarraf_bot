@@ -119,19 +119,23 @@ knows which database it talks to.
 
 ## 6. Runtime model
 
-- `main.ts`: load config → open DB and apply migrations → build bot → build HTTP app → listen → poll.
+- `main.ts`: load config → open DB and apply migrations → build bot → build HTTP app → `getMe` and
+  wire the channel queue → listen → poll (or register the webhook).
 - **Scheduler (to implement):** a `setInterval` (≈60 s) in the same process runs idempotent
   "due" queries: expire offers (`expiresAt <= now`), ping posters of no-expiry offers every 48 h
   and auto-pause after 24 h of silence, auto-decline pending requests older than 12 h and notify
   the taker. **No in-memory timers**: every tick asks the DB what is due, so a restart or deploy
   loses nothing — whatever became due while the process was down runs on the first tick.
   Deliberate ceiling: one process, one interval; a job queue only if we ever run more than one instance.
-- **Channel sync (to implement):** `renderChannelPost(offer, claims)` is a pure function of DB
-  state; `syncChannelPost(offerId)` is called after every state change and edits the post in
+- **Channel sync** (`features/offers/channel.ts`): `renderOffer(offer)` is a pure function of DB
+  state; `queueChannelSync(offerId)` runs at the end of every offer mutation and edits the post in
   place, or deletes it on complete / close / expire. No bumping (delete + resend) for now — add it
-  if subscribers turn out to miss partially-filled offers. Per-offer serialisation and burst
-  coalescing, plus `@grammyjs/auto-retry` for 429s. Bots may edit/delete their own channel posts
-  without the 48 h limit.
+  if subscribers turn out to miss partially-filled offers. One promise chain drains the queue, so
+  calls are serialised; a second change to the same offer while it is still queued is coalesced
+  into one render. 429 retries use Telegram's own `retry_after` (three attempts) rather than
+  `@grammyjs/auto-retry`. Bots may edit/delete their own channel posts without the 48 h limit.
+  Known ceiling: the queue is in memory, so a crash between the commit and the API call leaves the
+  post stale until the offer changes again.
 - **Notifications** are sent from services via `bot.api` (not from `ctx`) so the Mini App path
   and the bot path share them.
 - **Callback idempotency:** every callback is answered; stale Confirm/Decline/Done buttons on a
@@ -207,13 +211,17 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-13 | Subdomain per bot (`<bot>.bots.abounegm.com`); TMA + API + webhook on that one origin        | Owner decision after weighing paths vs subdomains (§9)                                                            |
 | 2026-09-13 | Webhook in production, polling in dev; secret derived from the bot token                     | One `PUBLIC_URL`; no extra secret to manage                                                                       |
 | 2026-09-13 | Bot-only container; the host's existing Caddy proxies to a loopback port                     | Owner already runs Caddy on the VPS                                                                               |
+| 2026-09-13 | Channel posts are English only (`i18n.t('en', …)`)                                           | One post, one mixed-language audience; per-poster locales would make the channel a language soup                  |
+| 2026-09-13 | Channel sync is an in-process promise queue keyed by offer id, wired at boot                 | One process owns the channel; a DB-backed outbox buys durability the product does not need yet                    |
+| 2026-09-13 | Paused offers leave the browse list (they stay in My offers and keep their post)             | Owner: nothing on the board should be untakeable                                                                  |
 
 ## 11. Roadmap (suggested order — dependency and value)
 
 1. **Offers core** — `features/offers`: service (create/edit/pause/close with the
    `amount ≥ filled + reserved` rule), API, Mini App Browse / Offer / Create screens, TanStack
    Router + Query, typed `hc<Api>` client. Deep links `startapp=offer_<id>`.
-2. **Channel sync** — render + edit/delete/bump, queue, auto-retry. The product's core promise.
+2. ~~**Channel sync**~~ — render, edit in place, delete, coalescing queue, 429 retry: done 2026-09-13
+   (`features/offers/channel.ts`). No bumping; Take button waits for claims.
 3. **Claims handshake** — take (Mini App) → poster Confirm/Decline (bot) → two-sided Done →
    channel update; cancel/release; contact gating (username revealed only after confirm); idempotent stale buttons.
 4. **Bot parity** — `/new` wizard via `@grammyjs/conversations`, `/mine`, reply keyboard, `/board`,

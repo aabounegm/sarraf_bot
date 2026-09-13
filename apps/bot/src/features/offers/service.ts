@@ -10,6 +10,7 @@ import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import { type Db, type DbOrTx, schema } from '../../db/index.ts';
 import type { TelegramUser } from '../../http/auth.ts';
 import { AppError } from '../../lib/app-error.ts';
+import { queueChannelSync } from './channel.ts';
 
 const { users, offers, claims } = schema;
 type OfferRow = typeof offers.$inferSelect;
@@ -57,7 +58,7 @@ export function ensureUser(db: DbOrTx, u: TelegramUser): UserRow {
 }
 
 export function createOffer(db: Db, poster: TelegramUser, input: OfferInput): OfferDetail {
-  return db.transaction((tx) => {
+  const offer = db.transaction((tx) => {
     ensureUser(tx, poster);
     const row = tx
       .insert(offers)
@@ -66,6 +67,8 @@ export function createOffer(db: Db, poster: TelegramUser, input: OfferInput): Of
       .get();
     return getOffer(tx, row.id);
   });
+  queueChannelSync(offer.id);
+  return offer;
 }
 
 export function updateOffer(
@@ -74,7 +77,7 @@ export function updateOffer(
   offerId: number,
   input: OfferInput,
 ): OfferDetail {
-  return db.transaction((tx) => {
+  const offer = db.transaction((tx) => {
     const row = ownOffer(tx, userId, offerId);
     if (row.status === 'closed' || row.status === 'completed' || row.status === 'expired') {
       throw new AppError(409, 'offer-finished');
@@ -84,6 +87,8 @@ export function updateOffer(
     tx.update(offers).set(toColumns(input)).where(eq(offers.id, offerId)).run();
     return getOffer(tx, offerId);
   });
+  queueChannelSync(offerId);
+  return offer;
 }
 
 export type OfferAction = 'pause' | 'resume' | 'close';
@@ -99,7 +104,7 @@ export function applyOfferAction(
   offerId: number,
   action: OfferAction,
 ): OfferDetail {
-  return db.transaction((tx) => {
+  const offer = db.transaction((tx) => {
     const row = ownOffer(tx, userId, offerId);
     const t = TRANSITIONS[action];
     if (!t.from.includes(row.status)) throw new AppError(409, 'invalid-transition');
@@ -113,6 +118,8 @@ export function applyOfferAction(
     }
     return getOffer(tx, offerId);
   });
+  queueChannelSync(offerId);
+  return offer;
 }
 
 export function getOffer(db: DbOrTx, offerId: number): OfferDetail {
