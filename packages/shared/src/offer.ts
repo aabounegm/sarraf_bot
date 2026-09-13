@@ -1,3 +1,13 @@
+import { z } from 'zod';
+
+import {
+  CURRENCY_CODES,
+  CURRENCY_METHODS,
+  type Currency,
+  EXPIRY_OPTIONS_HOURS,
+  NOTE_MAX_LENGTH,
+  rateBase,
+} from './currencies.ts';
 import type { Minor } from './money.ts';
 
 export const OFFER_STATUSES = ['active', 'paused', 'completed', 'closed', 'expired'] as const;
@@ -22,4 +32,68 @@ export function availability(giveAmount: Minor, claims: readonly ClaimAmount[]) 
   const reserved = sum('confirmed');
   const requested = sum('pending');
   return { filled, reserved, requested, remaining: giveAmount - filled - reserved };
+}
+
+const currency = z.enum(CURRENCY_CODES);
+const methodList = z.array(z.string().min(1)).min(1);
+
+/** What a poster submits to create or edit an offer. Amounts are minor units. */
+export const OfferInput = z
+  .object({
+    giveCurrency: currency,
+    giveAmount: z.number().int().positive(),
+    giveMethods: methodList,
+    getCurrency: currency,
+    getMethods: methodList,
+    /** "1 base = rate quote"; null = no rate given (implies negotiable). */
+    rate: z.number().positive().nullable(),
+    negotiable: z.boolean(),
+    expiresInHours: z.union([z.literal(EXPIRY_OPTIONS_HOURS), z.null()]),
+    note: z
+      .string()
+      .trim()
+      .max(NOTE_MAX_LENGTH)
+      .transform((s) => s || null)
+      .nullable(),
+  })
+  .refine((o) => o.giveCurrency !== o.getCurrency, {
+    message: 'same-currency',
+    path: ['getCurrency'],
+  })
+  .refine((o) => o.giveMethods.every((m) => CURRENCY_METHODS[o.giveCurrency].includes(m)), {
+    message: 'unknown-method',
+    path: ['giveMethods'],
+  })
+  .refine((o) => o.getMethods.every((m) => CURRENCY_METHODS[o.getCurrency].includes(m)), {
+    message: 'unknown-method',
+    path: ['getMethods'],
+  })
+  .refine((o) => o.negotiable || o.rate !== null, { message: 'rate-required', path: ['rate'] });
+export type OfferInput = z.infer<typeof OfferInput>;
+
+export type RateInfo =
+  | { kind: 'fixed' | 'asking'; base: Currency; quote: Currency; rate: number }
+  | { kind: 'open' };
+
+/** How to present the rate; the UI localizes the wording. */
+export function rateInfo(o: {
+  giveCurrency: Currency;
+  getCurrency: Currency;
+  rate: number | null;
+  negotiable: boolean;
+}): RateInfo {
+  if (o.rate === null) return { kind: 'open' };
+  const base = rateBase(o.giveCurrency, o.getCurrency);
+  const quote = base === o.giveCurrency ? o.getCurrency : o.giveCurrency;
+  return { kind: o.negotiable ? 'asking' : 'fixed', base, quote, rate: o.rate };
+}
+
+/** Deep links: `t.me/<bot>/<app>?startapp=offer_1042` and `?start=take_1042` on the bot side. */
+export type StartParam = { kind: 'offer' | 'take'; offerId: number };
+
+export const startParam = (kind: StartParam['kind'], offerId: number) => `${kind}_${offerId}`;
+
+export function parseStartParam(value: string | undefined): StartParam | null {
+  const m = /^(offer|take)_(\d+)$/.exec(value ?? '');
+  return m ? { kind: m[1] as StartParam['kind'], offerId: Number(m[2]) } : null;
 }

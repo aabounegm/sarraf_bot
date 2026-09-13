@@ -20,7 +20,8 @@ export function rateBase(a: Currency, b: Currency): Currency {
   return CURRENCY_CODES.indexOf(a) <= CURRENCY_CODES.indexOf(b) ? a : b;
 }
 
-/** Hours; `null` = no expiry (the bot then pings the poster every 48h). */
-export const EXPIRY_OPTIONS_HOURS = [6, 12, 24, 48, null] as const;
+/** Expiry choices in hours. `null` (no expiry) is also allowed; the bot then pings the poster every 48h. */
+export const EXPIRY_OPTIONS_HOURS = [6, 12, 24, 48] as const;
+export type ExpiryHours = (typeof EXPIRY_OPTIONS_HOURS)[number];
 export const NOTE_MAX_LENGTH = 200;
 export const COMMUNITY_TIMEZONE = 'Europe/Moscow';
