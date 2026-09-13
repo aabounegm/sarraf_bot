@@ -56,6 +56,8 @@ export const claims = sqliteTable('claims', {
   status: text().$type<ClaimStatus>().notNull().default('pending'),
   takerDone: integer({ mode: 'boolean' }).notNull().default(false),
   posterDone: integer({ mode: 'boolean' }).notNull().default(false),
+  // The poster's request DM, re-rendered on every transition (whichever surface caused it).
+  posterMessageId: integer(),
   ...timestamps,
 });
 

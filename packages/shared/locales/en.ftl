@@ -134,3 +134,21 @@ error-offer-unavailable = This offer isn't available any more.
 error-already-claimed = You already have a request on this offer.
 error-amount-exceeds-remaining = Only { $amount } left.
 error-invalid-transition = That request was already handled.
+
+## Bot — claim notifications
+claim-request = { $name } wants to take { $amount } of your offer #{ $id } ({ $total } via { $method }). Is it still available?
+claim-line-confirmed = ✓ Confirmed — reserved for { $name }
+claim-line-declined = Declined — amount released
+claim-line-cancelled = { $name } cancelled the request
+claim-line-released = { $name } released the reservation
+claim-line-waiting-you = { $name } marked it done · confirm on your side to update the post
+claim-line-waiting-them = You marked it done · waiting for { $name }
+claim-line-done = Deal completed
+claim-dm-confirmed = { $name } confirmed — { $amount } is yours. You can message them now.
+claim-dm-declined = { $name } declined your request for { $amount }.
+claim-dm-released = { $name } released the reservation for { $amount }.
+claim-dm-done = { $name } marked #{ $id } ({ $amount }) as done. Confirm on your side to update the post.
+claim-dm-completed = Deal completed: { $amount } with { $name }.
+done-too = Done on my side too
+not-yet = Not yet
+already-closed = Already closed

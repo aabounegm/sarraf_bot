@@ -137,3 +137,21 @@ error-offer-unavailable = لم يعد هذا العرض متاحاً.
 error-already-claimed = لديك طلب قائم على هذا العرض.
 error-amount-exceeds-remaining = المتبقي { $amount } فقط.
 error-invalid-transition = تمت معالجة هذا الطلب بالفعل.
+
+## Bot — claim notifications
+claim-request = يريد { $name } أخذ { $amount } من عرضك #{ $id } ({ $total } عبر { $method }). هل ما زال متاحاً؟
+claim-line-confirmed = ✓ مؤكد — محجوز لـ { $name }
+claim-line-declined = مرفوض — أُعيد المبلغ
+claim-line-cancelled = ألغى { $name } الطلب
+claim-line-released = ألغى { $name } الحجز
+claim-line-waiting-you = أنهى { $name } من جهته · أكّد من جهتك لتحديث المنشور
+claim-line-waiting-them = أنهيت من جهتك · بانتظار { $name }
+claim-line-done = اكتملت الصفقة
+claim-dm-confirmed = أكّد { $name } — { $amount } لك. يمكنك مراسلته الآن.
+claim-dm-declined = رفض { $name } طلبك بـ { $amount }.
+claim-dm-released = ألغى { $name } الحجز بـ { $amount }.
+claim-dm-done = أنهى { $name } #{ $id } ({ $amount }) من جهته. أكّد من جهتك لتحديث المنشور.
+claim-dm-completed = اكتملت الصفقة: { $amount } مع { $name }.
+done-too = تم من جهتي أيضاً
+not-yet = ليس بعد
+already-closed = مغلق بالفعل

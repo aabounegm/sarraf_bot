@@ -135,3 +135,21 @@ error-offer-unavailable = Это предложение больше недос�
 error-already-claimed = У вас уже есть запрос на это предложение.
 error-amount-exceeds-remaining = Осталось только { $amount }.
 error-invalid-transition = Этот запрос уже обработан.
+
+## Bot — claim notifications
+claim-request = { $name } хочет взять { $amount } из вашего предложения #{ $id } ({ $total } через { $method }). Оно ещё актуально?
+claim-line-confirmed = ✓ Подтверждено — зарезервировано за { $name }
+claim-line-declined = Отклонено — сумма освобождена
+claim-line-cancelled = { $name } отменил(а) запрос
+claim-line-released = { $name } снял(а) бронь
+claim-line-waiting-you = { $name } отметил(а) выполненным · подтвердите со своей стороны, чтобы обновить пост
+claim-line-waiting-them = Вы отметили выполненным · ждём { $name }
+claim-line-done = Сделка завершена
+claim-dm-confirmed = { $name } подтвердил(а) — { $amount } ваши. Теперь можно написать напрямую.
+claim-dm-declined = { $name } отклонил(а) ваш запрос на { $amount }.
+claim-dm-released = { $name } снял(а) бронь на { $amount }.
+claim-dm-done = { $name } отметил(а) #{ $id } ({ $amount }) как выполненное. Подтвердите со своей стороны, чтобы обновить пост.
+claim-dm-completed = Сделка завершена: { $amount } с { $name }.
+done-too = Выполнено и с моей стороны
+not-yet = Ещё нет
+already-closed = Уже закрыто

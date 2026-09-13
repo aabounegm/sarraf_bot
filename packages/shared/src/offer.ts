@@ -106,6 +106,19 @@ export function parseStartParam(value: string | undefined): StartParam | null {
   return m ? { kind: m[1] as StartParam['kind'], offerId: Number(m[2]) } : null;
 }
 
+/** Inline-button payloads on the bot's claim messages, e.g. `claim:confirm:42`. */
+export const CLAIM_BUTTONS = ['confirm', 'decline', 'release', 'done', 'dismiss'] as const;
+export type ClaimButton = (typeof CLAIM_BUTTONS)[number];
+
+export const claimCallback = (button: ClaimButton, claimId: number) => `claim:${button}:${claimId}`;
+export const CLAIM_CALLBACK = /^claim:([a-z]+):(\d+)$/;
+
+export function parseClaimCallback(data: string): { button: ClaimButton; claimId: number } | null {
+  const m = CLAIM_CALLBACK.exec(data);
+  const button = m?.[1] as ClaimButton | undefined;
+  return button && CLAIM_BUTTONS.includes(button) ? { button, claimId: Number(m![2]) } : null;
+}
+
 /** Link that opens the mini app on an offer; short name `app` is set in BotFather (docs/deployment.md). */
 export const miniAppLink = (bot: string, kind: StartParam['kind'], offerId: number) =>
   `https://t.me/${bot}/app?startapp=${startParam(kind, offerId)}`;
