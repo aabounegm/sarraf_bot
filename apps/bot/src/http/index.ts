@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import type { BotContext } from '../bot/index.ts';
 import type { Config } from '../config.ts';
 import type { Db } from '../db/index.ts';
+import { claimsApi } from '../features/claims/api.ts';
 import { offersApi } from '../features/offers/api.ts';
 import { AppError } from '../lib/app-error.ts';
 import { signInitData, telegramAuth } from './auth.ts';
@@ -23,7 +24,8 @@ function createApi(config: Config, db: Db) {
   return api
     .use(telegramAuth(config.BOT_TOKEN))
     .get('/me', (c) => c.json(c.get('user')))
-    .route('/offers', offersApi(db));
+    .route('/offers', offersApi(db))
+    .route('/claims', claimsApi(db));
 }
 
 /** Type of the API, consumed by the mini app via `hc<Api>('/api')` for end-to-end typing. */
