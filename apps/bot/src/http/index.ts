@@ -16,10 +16,18 @@ import { signInitData, telegramAuth } from './auth.ts';
 function createApi(config: Config, db: Db) {
   const api = new Hono().get('/health', (c) => c.json({ ok: true }));
   if (config.NODE_ENV !== 'production') {
-    // Lets the mini app call the API from a plain browser: valid initData for a fixed fake user.
-    api.get('/dev/init-data', (c) =>
-      c.text(signInitData({ id: 1, first_name: 'Dev', language_code: 'en' }, config.BOT_TOKEN)),
-    );
+    // Lets the mini app call the API from a plain browser: valid initData for a fake user.
+    // `?user=2` opens a second identity, which is how a two-sided handshake is tested in a browser.
+    api.get('/dev/init-data', (c) => {
+      const id = Number(c.req.query('user') ?? 1);
+      const name = c.req.query('name') ?? (id === 1 ? 'Dev' : `Dev ${id}`);
+      return c.text(
+        signInitData(
+          { id, first_name: name, username: `dev${id}`, language_code: 'en' },
+          config.BOT_TOKEN,
+        ),
+      );
+    });
   }
   return api
     .use(telegramAuth(config.BOT_TOKEN))
