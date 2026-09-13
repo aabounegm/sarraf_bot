@@ -4,6 +4,8 @@ import type { api } from '../../shared/api/client.ts';
 
 export type OfferSummary = InferResponseType<typeof api.offers.$get, 200>[number];
 export type OfferDetail = InferResponseType<(typeof api.offers)[':id']['$get'], 200>;
+/** The poster's own offers come with their claims attached, to render the requests underneath. */
+export type MyOffer = InferResponseType<typeof api.offers.mine.$get, 200>[number];
 export type OfferAction = 'pause' | 'resume' | 'close';
 
 /** Shared status colours (the only colours not taken from Telegram's theme). */

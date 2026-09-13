@@ -7,6 +7,7 @@ import {
   mainButton,
   miniApp,
   mockTelegramEnv,
+  openTelegramLink,
   popup,
   retrieveLaunchParams,
   themeParams,
@@ -49,7 +50,8 @@ export async function initTelegram() {
   // retrievable, which stays true after a reload because mockTelegramEnv persists them.
   if (import.meta.env.DEV && !(await isTMA('complete'))) {
     mocked = true;
-    const initData = await (await fetch('/api/dev/init-data')).text();
+    // `?user=2` in the browser's URL becomes a second fake identity (see http/index.ts).
+    const initData = await (await fetch(`/api/dev/init-data${window.location.search}`)).text();
     mockTelegramEnv({
       launchParams: {
         tgWebAppPlatform: 'android',
@@ -118,6 +120,17 @@ export function useBackButton(onBack: () => void, enabled = true) {
     if (!enabled || mocked || !backButton.onClick.isAvailable()) return;
     return backButton.onClick(onBack);
   }, [enabled, onBack]);
+}
+
+/**
+ * Opens a DM with the other side of a confirmed deal. Only handles can be linked to from a mini
+ * app, so callers must hide the entry point when `username` is null (the bot's own buttons can
+ * still reach those users by id).
+ */
+export function openChat(username: string) {
+  const url = `https://t.me/${username}`;
+  if (openTelegramLink.isAvailable()) openTelegramLink(url);
+  else window.open(url, '_blank');
 }
 
 export function haptic(type: 'success' | 'error' | 'warning') {

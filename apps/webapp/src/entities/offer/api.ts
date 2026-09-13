@@ -2,7 +2,7 @@ import type { Currency, OfferInput } from '@sarraf/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, unwrap } from '../../shared/api/client.ts';
-import type { OfferAction, OfferDetail, OfferSummary } from './model.ts';
+import type { MyOffer, OfferAction, OfferDetail, OfferSummary } from './model.ts';
 
 export const offerKeys = {
   all: ['offers'] as const,
@@ -28,7 +28,7 @@ export const useOffer = (id: number) =>
 export const useMyOffers = () =>
   useQuery({
     queryKey: offerKeys.mine,
-    queryFn: async () => unwrap<OfferSummary[]>(await api.offers.mine.$get()),
+    queryFn: async () => unwrap<MyOffer[]>(await api.offers.mine.$get()),
   });
 
 /** Creates when `offerId` is undefined, otherwise replaces the offer's editable fields. */

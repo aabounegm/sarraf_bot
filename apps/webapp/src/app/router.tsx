@@ -11,6 +11,7 @@ import { BrowsePage } from '../pages/browse/BrowsePage.tsx';
 import { MyOffersPage } from '../pages/my-offers/MyOffersPage.tsx';
 import { EditOfferPage, NewOfferPage } from '../pages/offer-form/OfferFormPage.tsx';
 import { OfferPage } from '../pages/offer/OfferPage.tsx';
+import { TakePage } from '../pages/take/TakePage.tsx';
 
 // Code-based routes (file-based routing would fight FSD's pages/ layer).
 const root = createRootRoute({ component: Outlet });
@@ -24,12 +25,15 @@ const routeTree = root.addChildren([
     path: '/offers/$offerId/edit',
     component: EditOfferPage,
   }),
+  createRoute({ getParentRoute: () => root, path: '/offers/$offerId/take', component: TakePage }),
 ]);
 
 /** Memory history: a Mini App has no address bar; deep links arrive as Telegram's start_param. */
 export function createAppRouter(startParam: string | undefined) {
   const target = parseStartParam(startParam);
-  const initialPath = target ? `/offers/${target.offerId}` : '/';
+  const initialPath = target
+    ? `/offers/${target.offerId}${target.kind === 'take' ? '/take' : ''}`
+    : '/';
   return createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialPath] }),

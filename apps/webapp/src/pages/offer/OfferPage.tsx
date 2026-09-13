@@ -1,5 +1,5 @@
 import { useLocalization } from '@fluent/react';
-import { useParams } from '@tanstack/react-router';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import {
   Avatar,
   Cell,
@@ -12,6 +12,7 @@ import {
   Title,
 } from '@telegram-apps/telegram-ui';
 
+import { isLive, isOpen } from '../../entities/claim/model.ts';
 import { useOffer } from '../../entities/offer/api.ts';
 import {
   amount,
@@ -23,9 +24,10 @@ import {
   rateText,
 } from '../../entities/offer/format.ts';
 import { COLOR_OK, COLOR_WARN, type OfferDetail } from '../../entities/offer/model.ts';
+import { ClaimCard } from '../../features/manage-claim/ClaimCard.tsx';
 import { OfferActions } from '../../features/manage-offer/OfferActions.tsx';
 import { getCurrentUserId } from '../../shared/lib/telegram.ts';
-import { Page } from '../../shared/ui/Page.tsx';
+import { Page, PrimaryButton } from '../../shared/ui/Page.tsx';
 
 /** Under the row label, not in the Cell's `after` slot: a long method list has to wrap. */
 function MethodChips({ methods }: { methods: string[] }) {
@@ -61,6 +63,7 @@ function ProgressBar({ offer }: { offer: OfferDetail }) {
 
 export function OfferPage() {
   const { l10n } = useLocalization();
+  const navigate = useNavigate();
   const { offerId } = useParams({ from: '/offers/$offerId' });
   const offer = useOffer(Number(offerId));
 
@@ -82,6 +85,14 @@ export function OfferPage() {
   const o = offer.data;
   const status = availabilityText(l10n, o);
   const mine = o.poster.id === getCurrentUserId();
+  const myClaims = mine ? [] : o.claims.filter((c) => c.taker.id === getCurrentUserId());
+  // The open request if there is one, otherwise the last thing that happened (a completed deal).
+  const myClaim = myClaims.find(isOpen) ?? myClaims.at(-1);
+  // Nothing to take when it is yours, paused, gone, or you are already in the queue for it.
+  const canTake =
+    !mine && o.status === 'active' && o.availability.remaining > 0 && !(myClaim && isOpen(myClaim));
+
+  const others = o.claims.filter((c) => c.id !== myClaim?.id && isLive(c));
 
   return (
     <Page back>
@@ -125,6 +136,8 @@ export function OfferPage() {
         </div>
       )}
 
+      {myClaim && <ClaimCard offer={o} claim={myClaim} />}
+
       <Section header={l10n.getString('details')}>
         <Cell readOnly multiline description={<MethodChips methods={o.giveMethods} />}>
           {l10n.getString('gives', { name: o.poster.firstName })}
@@ -145,15 +158,24 @@ export function OfferPage() {
         </Section>
       )}
 
-      {o.claims.length > 0 && (
+      {others.length > 0 && (
         <Section header={l10n.getString('other-takers')}>
-          {o.claims.map((c) => (
+          {others.map((c) => (
             <Cell key={c.id} readOnly after={l10n.getString(`claim-${c.status}`)}>
               {c.taker.firstName} · {amount(c.amount, o.giveCurrency)}
             </Cell>
           ))}
         </Section>
       )}
+
+      <PrimaryButton
+        text={l10n.getString(canTake ? 'take-offer' : 'back-to-offers')}
+        onClick={() =>
+          canTake
+            ? navigate({ to: '/offers/$offerId/take', params: { offerId: String(o.id) } })
+            : navigate({ to: '/' })
+        }
+      />
     </Page>
   );
 }
