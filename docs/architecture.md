@@ -136,8 +136,9 @@ knows which database it talks to.
   `@grammyjs/auto-retry`. Bots may edit/delete their own channel posts without the 48 h limit.
   Known ceiling: the queue is in memory, so a crash between the commit and the API call leaves the
   post stale until the offer changes again.
-- **Notifications** are sent from services via `bot.api` (not from `ctx`) so the Mini App path
-  and the bot path share them.
+- **Notifications** are sent from services via `bot.api` (not from `ctx`) so the Mini App path and
+  the bot path share them: `features/claims/notify.ts`, on the same fire-and-forget queue helper as
+  the channel post (`lib/telegram-queue.ts`).
 - **Callback idempotency:** every callback is answered; stale Confirm/Decline/Done buttons on a
   closed claim answer "Already closed" and remove the keyboard.
 
@@ -218,6 +219,9 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-13 | A release is recorded as `declined` by the poster, `cancelled` by the taker                  | Same effect on availability; the taker's list should say honestly which happened                                  |
 | 2026-09-13 | Claim routes answer with the whole `OfferDetail`                                             | One response refreshes the claim, the availability and the other takers; no second round trip                     |
 | 2026-09-13 | `/api/dev/init-data?user=2` issues a second fake identity in development                     | A two-sided handshake cannot be tested from one browser profile otherwise                                         |
+| 2026-09-13 | One claim DM to the poster (`claims.posterMessageId`), re-rendered like the channel post     | Confirming in the mini app has to disarm the bot's buttons; two surfaces, one message to keep honest              |
+| 2026-09-13 | Stale claim buttons answer "Already closed" instead of acting                                | The service refuses the transition anyway; the callback just reports it (spec § idempotency)                      |
+| 2026-09-13 | Notifications render in the recipient's stored `users.locale`, not the actor's               | There is no `ctx` when the mini app triggers the DM                                                               |
 
 ## 11. Roadmap (suggested order — dependency and value)
 
@@ -226,9 +230,9 @@ Runbook: [deployment.md](deployment.md). The shape:
    Router + Query, typed `hc<Api>` client. Deep links `startapp=offer_<id>`.
 2. ~~**Channel sync**~~ — render, edit in place, delete, coalescing queue, 429 retry: done 2026-09-13
    (`features/offers/channel.ts`). No bumping; Take button waits for claims.
-3. **Claims handshake** — service, API and Mini App done 2026-09-13 (`features/claims`, take screen,
-   claim cards, "Your requests"); contact gating and the channel's Take button included. Still to do:
-   the bot half — request notifications with Confirm/Decline, two-sided Done, idempotent stale buttons.
+3. ~~**Claims handshake**~~ — done 2026-09-13 on all three surfaces (`features/claims`: service, API,
+   take screen, claim cards, request DMs with Confirm/Decline, two-sided Done, contact gating,
+   idempotent stale buttons). See docs/features/claims.md.
 4. **Bot parity** — `/new` wizard via `@grammyjs/conversations`, `/mine`, reply keyboard, `/board`,
    and the take wizard from `?start=take_<id>` (same service as the Mini App take).
 5. **Scheduler** — expiry, 48 h check-ins for no-expiry offers, auto-pause, 12 h pending auto-decline.
