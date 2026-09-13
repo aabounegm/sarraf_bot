@@ -7,10 +7,11 @@ import {
   rateInfo,
 } from '@sarraf/shared';
 import { eq } from 'drizzle-orm';
-import { type Api, GrammyError, InlineKeyboard } from 'grammy';
+import { type Api, InlineKeyboard } from 'grammy';
 
 import { i18n } from '../../bot/i18n.ts';
 import { type Db, schema } from '../../db/index.ts';
+import { complains, createQueue, withRetry } from '../../lib/telegram-queue.ts';
 import { type OfferDetail, getOffer } from './service.ts';
 
 const { offers } = schema;
@@ -119,7 +120,7 @@ interface ChannelDeps {
 
 let deps: ChannelDeps | null = null;
 const pending = new Set<number>();
-let queue: Promise<unknown> = Promise.resolve();
+const queue = createQueue('channel sync');
 
 /** Wired at boot; until then (tests, one-off scripts) queueing is a no-op. */
 export function startChannelSync(channel: ChannelDeps) {
@@ -133,19 +134,13 @@ export function startChannelSync(channel: ChannelDeps) {
 export function queueChannelSync(offerId: number) {
   if (!deps || pending.has(offerId)) return; // already queued: one render covers both changes
   pending.add(offerId);
-  queue = queue.then(async () => {
+  queue.push(() => {
     pending.delete(offerId);
-    try {
-      await syncOne(offerId);
-    } catch (err) {
-      console.error(`channel sync failed for offer ${offerId}`, err);
-    }
-    return null;
+    return syncOne(offerId);
   });
 }
 
-/** Resolves when the queue is empty — for tests and for a clean shutdown. */
-export const flushChannelSync = () => queue;
+export const flushChannelSync = () => queue.idle();
 
 async function syncOne(offerId: number) {
   const { api, db, chat, botUsername } = deps!;
@@ -191,19 +186,3 @@ async function syncOne(offerId: number) {
 
 const setMessageId = (db: Db, offerId: number, channelMessageId: number | null) =>
   db.update(offers).set({ channelMessageId }).where(eq(offers.id, offerId)).run();
-
-const complains = (err: unknown, ...reasons: string[]) =>
-  err instanceof GrammyError && reasons.some((reason) => err.description.includes(reason));
-
-/** Telegram answers 429 with the exact pause to take; every other failure is the caller's problem. */
-async function withRetry<T>(call: () => Promise<T>, attempts = 3): Promise<T> {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      return await call();
-    } catch (err) {
-      const retryAfter = err instanceof GrammyError ? err.parameters.retry_after : undefined;
-      if (retryAfter === undefined || attempt === attempts) throw err;
-      await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
-    }
-  }
-}
