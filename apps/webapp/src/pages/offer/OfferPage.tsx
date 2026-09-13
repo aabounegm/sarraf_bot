@@ -132,9 +132,6 @@ export function OfferPage() {
         <Cell readOnly multiline description={<MethodChips methods={o.getMethods} />}>
           {l10n.getString('accepts')}
         </Cell>
-        <Cell readOnly after={l10n.getString('allowed')}>
-          {l10n.getString('partial-amounts')}
-        </Cell>
         <Cell readOnly after={expiryDateText(l10n, o.expiresAt)}>
           {l10n.getString('expiry')}
         </Cell>
