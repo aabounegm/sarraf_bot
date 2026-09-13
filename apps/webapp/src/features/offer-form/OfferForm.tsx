@@ -96,6 +96,7 @@ export function OfferForm({ form }: { form: Form }) {
           after={state.giveCurrency}
         />
         <Cell
+          readOnly
           subtitle={
             state.giveCurrency === 'USDT'
               ? l10n.getString('network')
@@ -115,7 +116,7 @@ export function OfferForm({ form }: { form: Form }) {
           value={state.getCurrency}
           onChange={form.setGetCurrency}
         />
-        <Cell subtitle={l10n.getString('payment-method-hint')} />
+        <Cell readOnly subtitle={l10n.getString('payment-method-hint')} />
         <MethodList
           options={form.getMethodOptions}
           selected={state.getMethods}
@@ -187,7 +188,7 @@ export function OfferForm({ form }: { form: Form }) {
           maxLength={NOTE_MAX_LENGTH}
           onChange={(e) => patch({ note: e.target.value })}
         />
-        <Cell subtitle={`${state.note.length}/${NOTE_MAX_LENGTH}`} />
+        <Cell readOnly subtitle={`${state.note.length}/${NOTE_MAX_LENGTH}`} />
       </Section>
     </>
   );

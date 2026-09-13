@@ -126,26 +126,32 @@ export function OfferPage() {
       )}
 
       <Section header={l10n.getString('details')}>
-        <Cell multiline description={<MethodChips methods={o.giveMethods} />}>
+        <Cell readOnly multiline description={<MethodChips methods={o.giveMethods} />}>
           {l10n.getString('gives', { name: o.poster.firstName })}
         </Cell>
-        <Cell multiline description={<MethodChips methods={o.getMethods} />}>
+        <Cell readOnly multiline description={<MethodChips methods={o.getMethods} />}>
           {l10n.getString('accepts')}
         </Cell>
-        <Cell after={l10n.getString('allowed')}>{l10n.getString('partial-amounts')}</Cell>
-        <Cell after={expiryDateText(l10n, o.expiresAt)}>{l10n.getString('expiry')}</Cell>
+        <Cell readOnly after={l10n.getString('allowed')}>
+          {l10n.getString('partial-amounts')}
+        </Cell>
+        <Cell readOnly after={expiryDateText(l10n, o.expiresAt)}>
+          {l10n.getString('expiry')}
+        </Cell>
       </Section>
 
       {o.note && (
         <Section header={l10n.getString('note-from', { name: o.poster.firstName })}>
-          <Cell multiline>{o.note}</Cell>
+          <Cell readOnly multiline>
+            {o.note}
+          </Cell>
         </Section>
       )}
 
       {o.claims.length > 0 && (
         <Section header={l10n.getString('other-takers')}>
           {o.claims.map((c) => (
-            <Cell key={c.id} after={l10n.getString(`claim-${c.status}`)}>
+            <Cell key={c.id} readOnly after={l10n.getString(`claim-${c.status}`)}>
               {c.taker.firstName} · {amount(c.amount, o.giveCurrency)}
             </Cell>
           ))}

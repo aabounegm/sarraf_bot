@@ -20,3 +20,9 @@
 .form-input > div {
   flex-shrink: 0;
 }
+
+/* Cell is a Tappable: pointer cursor, tap ripple and hover tint even with no onClick. The
+   readOnly prop drops the first two; the hover tint has no opt-out, so undo it here. */
+.app div[readonly]:hover {
+  background: transparent;
+}
