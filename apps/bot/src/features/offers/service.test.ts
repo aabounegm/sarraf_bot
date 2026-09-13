@@ -131,7 +131,8 @@ test('pause/resume/close transitions; close declines pending requests only', () 
     'invalid-transition',
   );
   assert.equal(applyOfferAction(db, alex.id, offer.id, 'pause').status, 'paused');
-  assert.equal(listOffers(db).length, 1, 'paused offers stay visible');
+  assert.equal(listOffers(db).length, 0, 'paused offers leave the board');
+  assert.equal(listOffersByPoster(db, alex.id).length, 1, 'but stay in the poster’s own list');
   assert.equal(applyOfferAction(db, alex.id, offer.id, 'resume').status, 'active');
   const closed = applyOfferAction(db, alex.id, offer.id, 'close');
   assert.equal(closed.status, 'closed');

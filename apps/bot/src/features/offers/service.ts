@@ -43,8 +43,8 @@ export interface OfferDetail extends OfferSummary {
   }[];
 }
 
-/** Statuses a browsing user can still see; completed/closed/expired disappear from the board. */
-const VISIBLE: OfferStatus[] = ['active', 'paused'];
+/** Only takeable offers are on the board; a paused one stays visible to its poster in "My offers". */
+const browsable = eq(offers.status, 'active');
 
 export function ensureUser(db: DbOrTx, u: TelegramUser): UserRow {
   const values = { id: u.id, firstName: u.first_name, username: u.username ?? null };
@@ -134,9 +134,7 @@ export function getOffer(db: DbOrTx, offerId: number): OfferDetail {
 }
 
 export function listOffers(db: DbOrTx, filter: { give?: Currency } = {}): OfferSummary[] {
-  const where = filter.give
-    ? and(inArray(offers.status, VISIBLE), eq(offers.giveCurrency, filter.give))
-    : inArray(offers.status, VISIBLE);
+  const where = filter.give ? and(browsable, eq(offers.giveCurrency, filter.give)) : browsable;
   return summarize(db, db.select().from(offers).where(where).orderBy(desc(offers.createdAt)).all());
 }
 

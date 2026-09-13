@@ -8,14 +8,14 @@ belong to later phases (see the table — "pending" cells are the drift checklis
 
 ## The same feature on each surface
 
-| Action                 | Mini app                                                                                                      | Bot chat                                           | Channel                                              |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------- |
-| Browse                 | `/` `BrowsePage` — chips filter by give currency; shows active + paused; hides completed/closed/expired       | `/board` → opens the app _(pending)_               | —                                                    |
-| Detail                 | `/offers/$offerId` `OfferPage` — header, progress (filled grey / reserved amber), details, note, other takers | —                                                  | one post per offer _(pending, channel-sync feature)_ |
-| Create                 | `/offers/new` `OfferForm`                                                                                     | `/new` step-by-step wizard _(pending, bot-parity)_ | post created _(pending)_                             |
-| Edit                   | `/offers/$offerId/edit`                                                                                       | Edit button under `/mine` cards _(pending)_        | post re-rendered _(pending)_                         |
-| Pause / Resume / Close | `OfferActions` on detail (own offers) and on My offers                                                        | buttons under `/mine` cards _(pending)_            | "Paused" line / post deleted _(pending)_             |
-| My offers              | `/my` `MyOffersPage` (Your requests section arrives with claims)                                              | `/mine` _(pending)_                                | —                                                    |
+| Action                 | Mini app                                                                                                        | Bot chat                                           | Channel                                              |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------- |
+| Browse                 | `/` `BrowsePage` — chips filter by give currency; only `active` offers (paused/finished ones live in My offers) | `/board` → opens the app _(pending)_               | —                                                    |
+| Detail                 | `/offers/$offerId` `OfferPage` — header, progress (filled grey / reserved amber), details, note, other takers   | —                                                  | one post per offer _(pending, channel-sync feature)_ |
+| Create                 | `/offers/new` `OfferForm`                                                                                       | `/new` step-by-step wizard _(pending, bot-parity)_ | post created _(pending)_                             |
+| Edit                   | `/offers/$offerId/edit`                                                                                         | Edit button under `/mine` cards _(pending)_        | post re-rendered _(pending)_                         |
+| Pause / Resume / Close | `OfferActions` on detail (own offers) and on My offers                                                          | buttons under `/mine` cards _(pending)_            | "Paused" line / post deleted _(pending)_             |
+| My offers              | `/my` `MyOffersPage` (Your requests section arrives with claims)                                                | `/mine` _(pending)_                                | —                                                    |
 
 Deep links: `startapp=offer_<id>` → `/offers/<id>`; `take_<id>` lands on the same page until the
 claims feature adds the take flow. Parsing: `parseStartParam` in `@sarraf/shared`.

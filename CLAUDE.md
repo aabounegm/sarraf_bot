@@ -118,7 +118,7 @@ Rules of thumb:
 **Offers feature done (API + mini app), 2026-09-12.** See [docs/features/offers.md](docs/features/offers.md).
 Working: create/browse/detail/edit/pause/resume/close via `/api/offers*` and the mini app pages
 (TanStack Router + Query, typed `hc<Api>` client); bot answers `/start`; dev-in-browser works end
-to end (`/api/dev/init-data`). `pnpm check` is green (11 bot tests, 7 shared).
+to end (`/api/dev/init-data`). `pnpm check` is green (12 bot tests, 7 shared).
 
 Not yet done, suggested order (see architecture.md → Roadmap for detail):
 
