@@ -71,6 +71,14 @@ export const OfferInput = z
   .refine((o) => o.negotiable || o.rate !== null, { message: 'rate-required', path: ['rate'] });
 export type OfferInput = z.infer<typeof OfferInput>;
 
+/** What a taker submits to request part (or all) of an offer; `method` is one of `offer.getMethods`. */
+export const ClaimInput = z.object({
+  offerId: z.number().int().positive(),
+  amount: z.number().int().positive(),
+  method: z.string().min(1),
+});
+export type ClaimInput = z.infer<typeof ClaimInput>;
+
 export type RateInfo =
   | { kind: 'fixed' | 'asking'; base: Currency; quote: Currency; rate: number }
   | { kind: 'open' };
