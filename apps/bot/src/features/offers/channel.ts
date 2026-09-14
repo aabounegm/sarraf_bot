@@ -1,17 +1,11 @@
-import {
-  COMMUNITY_TIMEZONE,
-  type OfferStatus,
-  convert,
-  formatAmount,
-  miniAppLink,
-  rateInfo,
-} from '@sarraf/shared';
+import { type OfferStatus, miniAppLink } from '@sarraf/shared';
 import { eq } from 'drizzle-orm';
 import { type Api, InlineKeyboard } from 'grammy';
 
 import { i18n } from '../../bot/i18n.ts';
 import { type Db, schema } from '../../db/index.ts';
 import { complains, createQueue, withRetry } from '../../lib/telegram-queue.ts';
+import { renderOffer } from './render.ts';
 import { type OfferDetail, getOffer } from './service.ts';
 
 const { offers } = schema;
@@ -22,82 +16,6 @@ const t = (key: string, vars?: Record<string, string | number>) => i18n.t(LOCALE
 
 /** Statuses whose post is removed rather than edited. */
 const GONE: OfferStatus[] = ['closed', 'completed', 'expired'];
-
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const amount = (minor: number, currency: string) => `${formatAmount(minor)} ${currency}`;
-
-/** The post body, HTML. Kept in sync with docs/spec.md § Channel. */
-export function renderOffer(o: OfferDetail): string {
-  const lines = [
-    `<b>${esc(
-      t('channel-title', {
-        name: o.poster.firstName,
-        amount: formatAmount(o.giveAmount),
-        give: o.giveCurrency,
-        get: o.getCurrency,
-      }),
-    )}</b>`,
-    esc(rateLine(o)),
-    esc(t('channel-methods', { currency: o.giveCurrency, methods: o.giveMethods.join(', ') })),
-    esc(t('channel-methods', { currency: o.getCurrency, methods: o.getMethods.join(', ') })),
-  ];
-  if (o.note) lines.push(`<i>${esc(o.note)}</i>`);
-  lines.push(...statusLines(o).map(esc), esc(footer(o)));
-  return lines.join('\n');
-}
-
-function rateLine(o: OfferDetail): string {
-  const info = rateInfo(o);
-  if (info.kind === 'open') return t('rate-open');
-  const rate = t(`rate-${info.kind}`, {
-    base: info.base,
-    quote: info.quote,
-    rate: formatAmount(info.rate * 100),
-  });
-  const total = convert(o.giveCurrency, o.getCurrency, info.rate, o.giveAmount);
-  return `${rate} ${t('channel-total', { total: formatAmount(total), currency: o.getCurrency })}`;
-}
-
-function statusLines(o: OfferDetail): string[] {
-  if (o.status === 'paused') return [`● ${t('status-paused')}`];
-  const { remaining, reserved, requested } = o.availability;
-  const partial = remaining !== o.giveAmount;
-  const left = partial
-    ? t('left-of', {
-        left: formatAmount(remaining),
-        total: amount(o.giveAmount, o.giveCurrency),
-      })
-    : t('available', { amount: amount(remaining, o.giveCurrency) });
-  const contention = [
-    reserved > 0 && t('reserved', { amount: amount(reserved, o.giveCurrency) }),
-    requested > 0 && t('awaiting-confirmation', { amount: amount(requested, o.giveCurrency) }),
-  ].filter((x): x is string => Boolean(x));
-  return [
-    `● ${t(partial ? 'status-partial' : 'status-active')} — ${left}`,
-    ...(contention.length > 0 ? [contention.join(' · ')] : []),
-  ];
-}
-
-const footer = (o: OfferDetail) =>
-  `#${o.id} · ${o.poster.firstName}, ${t('deals', { count: o.poster.deals })} · ${expiry(o.expiresAt)}`;
-
-/** "expires today 20:00" — in the community's timezone, not the reader's. */
-function expiry(expiresAt: number | null): string {
-  if (expiresAt === null) return t('no-expiry');
-  const at = (options: Intl.DateTimeFormatOptions) =>
-    new Intl.DateTimeFormat(LOCALE, { timeZone: COMMUNITY_TIMEZONE, ...options });
-  const date = at({ year: 'numeric', month: '2-digit', day: '2-digit' });
-  const now = Date.now();
-  const day =
-    date.format(expiresAt) === date.format(now)
-      ? t('today')
-      : date.format(expiresAt) === date.format(now + 86_400_000)
-        ? t('tomorrow')
-        : at({ weekday: 'short' }).format(expiresAt);
-  return t('expires-at', {
-    when: `${day} ${at({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(expiresAt)}`,
-  });
-}
 
 /** Channel posts cannot carry web_app buttons, so both are deep links into the mini app. */
 function keyboard(o: OfferDetail, botUsername: string) {
@@ -162,7 +80,7 @@ async function syncOne(offerId: number) {
     return;
   }
 
-  const text = renderOffer(offer);
+  const text = renderOffer(offer, t);
   const options = {
     parse_mode: 'HTML' as const,
     reply_markup: keyboard(offer, botUsername),

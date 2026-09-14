@@ -5,9 +5,15 @@ import { type OfferInput, toMinor } from '@sarraf/shared';
 import { eq } from 'drizzle-orm';
 import type { Api } from 'grammy';
 
+import { i18n } from '../../bot/i18n.ts';
 import { type Db, openDb, schema } from '../../db/index.ts';
-import { flushChannelSync, renderOffer, startChannelSync } from './channel.ts';
+import { flushChannelSync, startChannelSync } from './channel.ts';
+import { renderOffer } from './render.ts';
 import { applyOfferAction, createOffer, getOffer } from './service.ts';
+
+/** The channel is English; the bot renders the same text with `ctx.t` (see render.ts). */
+const post = (db: Db, offerId: number) =>
+  renderOffer(getOffer(db, offerId), (key, vars) => i18n.t('en', key, vars));
 
 const alex = { id: 1, first_name: 'Alex', username: 'alex' };
 const nour = { id: 2, first_name: 'Nour' };
@@ -61,7 +67,7 @@ const messageId = (db: Db, offerId: number) =>
 test('renders the post: pair, rate with total, methods, note, status, footer', () => {
   const { db } = wire();
   const offer = createOffer(db, alex, input);
-  const lines = renderOffer(getOffer(db, offer.id)).split('\n');
+  const lines = post(db, offer.id).split('\n');
 
   assert.deepEqual(lines.slice(0, 5), [
     '<b>Alex gives 200 USDT for RUB</b>',
@@ -84,7 +90,7 @@ test('renders paused, negotiable, no-expiry and partially claimed offers', () =>
     expiresInHours: null,
     note: null,
   });
-  const lines = renderOffer(getOffer(db, open.id)).split('\n');
+  const lines = post(db, open.id).split('\n');
   assert.equal(lines[1], 'Rate negotiable');
   assert.equal(lines.at(-1), `#${open.id} · Nour, 0 deals · no expiry`);
 
@@ -100,12 +106,12 @@ test('renders paused, negotiable, no-expiry and partially claimed offers', () =>
       { offerId: open.id, takerId: alex.id, amount: toMinor(20), method: 'SBP', status: 'pending' },
     ])
     .run();
-  const claimed = renderOffer(getOffer(db, open.id)).split('\n');
+  const claimed = post(db, open.id).split('\n');
   assert.equal(claimed[4], '● Partially filled — 150 of 200 USDT left');
   assert.equal(claimed[5], '50 USDT reserved · 20 USDT requested, awaiting confirmation');
 
   applyOfferAction(db, nour.id, open.id, 'pause');
-  assert.equal(renderOffer(getOffer(db, open.id)).split('\n')[4], '● Paused');
+  assert.equal(post(db, open.id).split('\n')[4], '● Paused');
 });
 
 test('escapes HTML in names and notes', () => {
@@ -115,7 +121,7 @@ test('escapes HTML in names and notes', () => {
     { id: 3, first_name: '<b>Mallory</b>' },
     { ...input, note: 'a & b' },
   );
-  const text = renderOffer(getOffer(db, offer.id));
+  const text = post(db, offer.id);
   assert.ok(text.includes('&lt;b&gt;Mallory&lt;/b&gt;'), text);
   assert.ok(text.includes('<i>a &amp; b</i>'), text);
 });
