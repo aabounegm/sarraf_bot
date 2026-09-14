@@ -1,21 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { type OfferInput, claimCallback, toMinor } from '@sarraf/shared';
-import type { UserFromGetMe } from 'grammy/types';
+import { type OfferInput, startParam, toMinor } from '@sarraf/shared';
 
-import { createBot } from '../../bot/index.ts';
-import { loadConfig } from '../../config.ts';
-import { type Db, openDb } from '../../db/index.ts';
+import { harness } from '../../bot/testing.ts';
 import { createOffer, getOffer } from '../offers/service.ts';
 import { flushClaimNotifications, startClaimNotifications } from './notify.ts';
 import { createClaim } from './service.ts';
 
-const config = loadConfig({
-  BOT_TOKEN: '123:TEST',
-  PUBLIC_URL: 'https://a.b',
-  OFFERS_CHANNEL: '@c',
-});
 const alex = { id: 1, first_name: 'Alex', username: 'alex' };
 const nour = { id: 2, first_name: 'Nour' };
 const input: OfferInput = {
@@ -30,131 +22,134 @@ const input: OfferInput = {
   note: null,
 };
 
-/** `text` is the message body, or the toast for answerCallbackQuery — Telegram names both `text`. */
-interface Call {
-  method: string;
-  chatId?: number;
-  text?: string;
-  buttons: string[];
+/** The bot, with the notifier wired to it so the claim DMs are sent for real. */
+function chat() {
+  const h = harness();
+  startClaimNotifications({ api: h.bot.api, db: h.db });
+  return h;
 }
-
-/** A bot whose API calls are recorded instead of sent, with the notifier wired to it. */
-function harness() {
-  const db = openDb(':memory:');
-  const bot = createBot(config, db);
-  bot.botInfo = { id: 9, is_bot: true, first_name: 'Inno', username: 'inno_bot' } as UserFromGetMe;
-  const calls: Call[] = [];
-  let nextMessageId = 500;
-  bot.api.config.use((_prev, method, payload) => {
-    const p = payload as {
-      chat_id?: number;
-      text?: string;
-      reply_markup?: { inline_keyboard: { text: string }[][] };
-    };
-    calls.push({
-      method,
-      chatId: p.chat_id,
-      text: p.text,
-      buttons: (p.reply_markup?.inline_keyboard ?? []).flat().map((b) => b.text),
-    });
-    return Promise.resolve({
-      ok: true,
-      result: { message_id: nextMessageId++ },
-    } as never);
-  });
-  startClaimNotifications({ api: bot.api, db });
-  return { db, bot, calls };
-}
-
-const tap = (
-  bot: ReturnType<typeof harness>['bot'],
-  user: typeof alex | typeof nour,
-  data: string,
-) =>
-  bot.handleUpdate({
-    update_id: 1,
-    callback_query: {
-      id: 'cb',
-      chat_instance: 'ci',
-      from: { id: user.id, is_bot: false, first_name: user.first_name },
-      data,
-      message: {
-        message_id: 500,
-        date: 0,
-        chat: { id: user.id, type: 'private', first_name: user.first_name },
-      },
-    },
-  });
-
-const claimIdOf = (db: Db, offerId: number) => getOffer(db, offerId).claims[0]!.id;
 
 test('a request is a DM to the poster with Confirm/Decline, kept up to date afterwards', async () => {
-  const { db, bot, calls } = harness();
+  const { db, calls, tap, sent } = chat();
   const offer = createOffer(db, alex, input);
   createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
   await flushClaimNotifications();
 
-  const request = calls.find((c) => c.method === 'sendMessage')!;
-  assert.equal(request.chatId, alex.id);
+  const request = sent(alex.id).at(-1)!;
   assert.match(
     request.text!,
     /Nour wants to take 50 USDT of your offer #\d+ \(4,825 RUB via SBP\)/,
   );
-  assert.deepEqual(request.buttons, ['Confirm', 'Decline']);
+  assert.deepEqual(
+    request.buttons.map((b) => b.text),
+    ['Confirm', 'Decline'],
+  );
 
-  calls.length = 0;
-  const claimId = claimIdOf(db, offer.id);
-  await tap(bot, alex, claimCallback('confirm', claimId));
+  const from = calls.length;
+  await tap(alex, 'Confirm');
   await flushClaimNotifications();
 
   assert.equal(getOffer(db, offer.id).claims[0]?.status, 'confirmed');
-  const edit = calls.find((c) => c.method === 'editMessageText')!;
+  const edit = calls.slice(from).find((c) => c.method === 'editMessageText')!;
   assert.match(edit.text!, /Confirmed — reserved for Nour/);
-  assert.deepEqual(edit.buttons, ['Message Nour', 'Mark as done', 'Release my reservation']);
+  assert.deepEqual(
+    edit.buttons.map((b) => b.text),
+    ['Message Nour', 'Mark as done', 'Release my reservation'],
+  );
 
-  const toTaker = calls.find((c) => c.method === 'sendMessage' && c.chatId === nour.id)!;
+  const toTaker = sent(nour.id).at(-1)!;
   assert.match(toTaker.text!, /Alex confirmed — 50 USDT is yours/);
-  assert.deepEqual(toTaker.buttons, ['Message Alex']);
+  assert.deepEqual(
+    toTaker.buttons.map((b) => b.text),
+    ['Message Alex'],
+  );
+  assert.equal(toTaker.buttons[0]?.url, 'https://t.me/alex', 'the handle, now that it is earned');
 });
 
 test('a button on a claim that moved on says so instead of acting twice', async () => {
-  const { db, bot, calls } = harness();
+  const { db, calls, tap } = chat();
   const offer = createOffer(db, alex, input);
   createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
-  const claimId = claimIdOf(db, offer.id);
-  await tap(bot, alex, claimCallback('decline', claimId));
-  calls.length = 0;
+  await flushClaimNotifications();
+  await tap(alex, 'Decline');
+  const from = calls.length;
 
-  await tap(bot, alex, claimCallback('confirm', claimId));
-  const answer = calls.find((c) => c.method === 'answerCallbackQuery')!;
+  await tap(alex, 'Confirm'); // the same message, still showing yesterday's buttons
+  const answer = calls.slice(from).find((c) => c.method === 'answerCallbackQuery')!;
   assert.equal(answer.text, 'Already closed');
   assert.equal(getOffer(db, offer.id).claims[0]?.status, 'declined', 'the decline stands');
 });
 
 test('done is two-sided: the other party is asked, then both get the summary', async () => {
-  const { db, bot, calls } = harness();
+  const { db, calls, tap, sent } = chat();
   const offer = createOffer(db, alex, input);
   createClaim(db, nour, { offerId: offer.id, amount: toMinor(200), method: 'SBP' });
-  const claimId = claimIdOf(db, offer.id);
-  await tap(bot, alex, claimCallback('confirm', claimId));
   await flushClaimNotifications();
-  calls.length = 0;
+  await tap(alex, 'Confirm');
+  await flushClaimNotifications();
 
-  await tap(bot, alex, claimCallback('done', claimId));
+  await tap(alex, 'Mark as done');
   await flushClaimNotifications();
-  const prompt = calls.find((c) => c.method === 'sendMessage' && c.chatId === nour.id)!;
+  const prompt = sent(nour.id).at(-1)!;
   assert.match(prompt.text!, /Alex marked #\d+ \(200 USDT\) as done/);
-  assert.deepEqual(prompt.buttons, ['Done on my side too', 'Not yet']);
-  calls.length = 0;
+  assert.deepEqual(
+    prompt.buttons.map((b) => b.text),
+    ['Done on my side too', 'Not yet'],
+  );
+  const from = calls.length;
 
-  await tap(bot, nour, claimCallback('done', claimId));
+  await tap(nour, 'Done on my side too');
   await flushClaimNotifications();
-  const claim = getOffer(db, offer.id).claims[0]!;
-  assert.equal(claim.status, 'done');
+  assert.equal(getOffer(db, offer.id).claims[0]?.status, 'done');
   assert.equal(getOffer(db, offer.id).status, 'completed', 'nothing left to give');
   assert.deepEqual(
-    calls.filter((c) => c.method === 'sendMessage').map((c) => c.chatId),
+    calls
+      .slice(from)
+      .filter((c) => c.method === 'sendMessage')
+      .map((c) => c.chatId),
     [nour.id, alex.id],
     'both sides get the summary',
   );
+});
+
+test('the channel Take button, bot half: /start take_<id> runs the take wizard', async () => {
+  const { db, say, tap, sent } = chat();
+  const offer = createOffer(db, alex, input);
+
+  await say(nour, `/start ${startParam('take', offer.id)}`);
+  assert.match(sent(nour.id).at(0)!.text!, /Alex gives 200 USDT for RUB/, 'the offer, first');
+  assert.ok(!sent(nour.id).some((c) => c.text?.includes('@alex')), 'no handle before confirmation');
+  assert.match(sent(nour.id).at(-1)!.text!, /How much USDT do you want\?\nMax 200 USDT/);
+
+  await say(nour, '50');
+  assert.deepEqual(
+    sent(nour.id)
+      .at(-1)!
+      .buttons.map((b) => b.text),
+    ['SBP', 'Cancel'],
+    'only the methods the poster accepts',
+  );
+
+  await tap(nour, 'SBP');
+  const preview = sent(nour.id).at(-1)!;
+  assert.match(preview.text!, /asking for 50 USDT of #\d+, 4,825 RUB, via SBP/);
+
+  await tap(nour, 'Request 50 USDT');
+  await flushClaimNotifications();
+  const claim = getOffer(db, offer.id).claims[0];
+  assert.equal(claim?.amount, toMinor(50));
+  assert.equal(claim?.method, 'SBP');
+  assert.equal(claim?.status, 'pending');
+  assert.match(sent(alex.id).at(-1)!.text!, /Nour wants to take 50 USDT/, 'the poster is asked');
+});
+
+test('the take wizard refuses an offer that is not takeable', async () => {
+  const { db, say, sent } = chat();
+  const offer = createOffer(db, alex, input);
+
+  await say(alex, `/start ${startParam('take', offer.id)}`);
+  assert.match(sent(alex.id).at(-1)!.text!, /can't take your own offer/);
+
+  await say(nour, `/start ${startParam('take', offer.id + 99)}`);
+  assert.match(sent(nour.id).at(-1)!.text!, /doesn't exist/);
 });

@@ -14,7 +14,7 @@ const config = loadConfig({
   OFFERS_CHANNEL: '@innoexchange',
 });
 
-test('/start replies in the user language with an "open app" button', async () => {
+test('/start replies in the user language with the menu keyboard', async () => {
   const bot = createBot(config, openDb(':memory:'));
   bot.botInfo = {
     id: 123,
@@ -43,10 +43,18 @@ test('/start replies in the user language with an "open app" button', async () =
   assert.equal(calls[0]?.method, 'sendMessage');
   const payload = calls[0]?.payload as {
     text: string;
-    reply_markup: { inline_keyboard: { web_app: { url: string } }[][] };
+    reply_markup: { keyboard: { text: string; web_app?: { url: string } }[][] };
   };
   assert.match(payload.text, /Привет, Nour\. InnoExchange \(@innoexchange_bot\)/);
-  assert.equal(payload.reply_markup.inline_keyboard[0]?.[0]?.web_app.url, config.PUBLIC_URL);
+  assert.deepEqual(
+    payload.reply_markup.keyboard.flat().map((b) => b.text),
+    ['Смотреть предложения', 'Новое предложение', 'Мои предложения', 'Помощь'],
+  );
+  assert.equal(
+    payload.reply_markup.keyboard[0]?.[0]?.web_app?.url,
+    config.PUBLIC_URL,
+    'browsing opens the mini app straight from the keyboard',
+  );
 });
 
 test('sqlite session storage round-trips', async () => {

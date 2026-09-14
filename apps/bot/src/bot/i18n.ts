@@ -3,13 +3,17 @@ import { fileURLToPath } from 'node:url';
 
 import { I18n } from '@grammyjs/i18n';
 
-import type { BotContext } from './index.ts';
+import type { WizardContext } from './wizard.ts';
 
 // The bot and the mini app read the same Fluent files from @sarraf/shared.
 const localesDir = dirname(fileURLToPath(import.meta.resolve('@sarraf/shared/locales/en.ftl')));
 
-/** Middleware for replies (`ctx.t`), and `i18n.t(locale, …)` where there is no user: the channel post. */
-export const i18n = new I18n<BotContext>({
+/**
+ * Middleware for replies (`ctx.t`), and `i18n.t(locale, …)` where there is no user: the channel post.
+ * Typed against the *inside-a-conversation* context, the narrower of the two, so the same instance
+ * can be installed on the bot and listed in `conversations({ plugins })`.
+ */
+export const i18n = new I18n<WizardContext>({
   defaultLocale: 'en',
   directory: localesDir,
   useSession: true,
