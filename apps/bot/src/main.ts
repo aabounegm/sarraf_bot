@@ -23,7 +23,7 @@ startChannelSync({
 });
 startClaimNotifications({ api: bot.api, db });
 
-serve({ fetch: http.fetch, port: config.PORT }, (info) =>
+const server = serve({ fetch: http.fetch, port: config.PORT }, (info) =>
   console.log(`http listening on :${info.port}`),
 );
 
@@ -35,9 +35,14 @@ if (config.BOT_MODE === 'webhook') {
   bot.start({ onStart: (me) => console.log(`bot @${me.username} polling`) });
 }
 
+// Handling the signal replaces Node's "just exit", so this must exit itself: the HTTP server
+// keeps the event loop alive, and a process that lingers stops `node --watch` from restarting it
+// (and leaves a bot that no longer polls).
 for (const signal of ['SIGINT', 'SIGTERM'] as const)
   process.once(signal, async () => {
+    server.close();
     await bot.stop();
     // Let the last post and DM land instead of drifting until the next change.
     await Promise.all([flushChannelSync(), flushClaimNotifications()]);
+    process.exit(0);
   });
