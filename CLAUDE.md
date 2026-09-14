@@ -45,12 +45,14 @@ apps/bot/src/         one Node process: bot + API + DB
   main.ts               boot: config → db (auto-migrate) → getMe + channel queue → http → bot (polling or webhook)
   config.ts             zod-validated env (see .env.example)
   db/                   schema.ts, index.ts (openDb); migrations in apps/bot/drizzle/
-  bot/                  createBot(): plugins (session in SQLite, i18n), BotContext type; i18n.ts = the shared Fluent instance
+  bot/                  createBot(): plugins (session in SQLite, i18n, conversations), BotContext; i18n.ts = the shared Fluent instance
+  bot/menu.ts           the reply keyboard and /start /help /board /cancel; bot/wizard.ts = the question steps both wizards use
+  bot/testing.ts        harness for *.test.ts: records Telegram calls, say()/tap() drive real updates
   http/                 createHttp(): Hono app: /api routes + serves apps/webapp/dist (SPA fallback); auth.ts = initData verification
-  lib/app-error.ts      AppError(status, code): thrown by services, mapped by http/index.ts onError
+  lib/app-error.ts      AppError(status, code): thrown by services, mapped by http/index.ts onError and by errorText() in the bot
   lib/telegram-queue.ts serialised fire-and-forget sends + 429 retry, shared by channel.ts and notify.ts
-  features/offers/      service.ts (rules) · api.ts (Hono routes) · channel.ts (the channel post) · *.test.ts — the pattern for every feature
-  features/claims/      the take → confirm → done handshake: service.ts · api.ts · bot.ts (buttons) · notify.ts (DMs)
+  features/offers/      service.ts (rules) · api.ts · bot.ts (/new /mine) · wizard.ts · render.ts · channel.ts · *.test.ts — the pattern for every feature
+  features/claims/      the take → confirm → done handshake: service.ts · api.ts · bot.ts (buttons) · card.ts · wizard.ts (take) · notify.ts (DMs)
 
 apps/webapp/src/      Feature-Sliced Design: app/ pages/ widgets/ features/ entities/ shared/
   app/main.tsx          initTelegram() → createLocalization() → createAppRouter(start_param) → <App>
@@ -117,21 +119,24 @@ Rules of thumb:
 
 ## Current state
 
-**Offers, channel post and the full claims handshake, 2026-09-13.** See
-[docs/features/offers.md](docs/features/offers.md) and [docs/features/claims.md](docs/features/claims.md).
-Working: create/browse/detail/edit/pause/resume/close; take → confirm/decline → two-sided done across
-mini app _and_ bot (request DM with [Confirm] [Decline], re-rendered on every transition, stale
-buttons answer "Already closed"); "Your requests"; contact gating; every mutation re-renders the
-channel post (verified against a real channel). Dev-in-browser works end to end — `?user=2` in the URL
-gives a second identity, which is how the handshake is tested from one machine. `pnpm check` is green
-(28 bot tests, 7 shared). Not yet exercised against a real chat: the claim DMs.
+**Offers, channel post, the claims handshake and the bot chat, 2026-09-14.** See
+[docs/features/offers.md](docs/features/offers.md), [docs/features/claims.md](docs/features/claims.md)
+and [docs/features/bot.md](docs/features/bot.md). Working on **both** surfaces:
+create/browse/detail/edit/pause/resume/close; take → confirm/decline → two-sided done (request DM
+with [Confirm] [Decline], re-rendered on every transition, stale buttons answer "Already closed");
+"Your requests"; contact gating; every mutation re-renders the channel post (verified against a real
+channel). In the chat: the reply keyboard, the `/new` and [Edit] wizards, `/mine` cards with their
+buttons, `/board`, `/help`, `/cancel`, and the take wizard from `?start=take_<id>`, all calling the
+same services as the API. Dev-in-browser works end to end — `?user=2` in the URL gives a second
+identity, which is how the handshake is tested from one machine. `pnpm check` is green (39 bot tests,
+7 shared). Not yet exercised against a real chat: the claim DMs and the wizards.
 
 Not yet done, suggested order (see architecture.md → Roadmap for detail):
 
 1. ~~Offers core~~ ✔
 2. ~~Channel post sync~~ ✔
 3. ~~Claims handshake~~ ✔ (both surfaces)
-4. Bot `/new` wizard (`@grammyjs/conversations`), `/mine`, take wizard from `?start=take_<id>`
+4. ~~Bot parity~~ ✔ — wizards via `@grammyjs/conversations`, `/mine`, reply keyboard, take deep link
 5. Scheduled jobs (DB-driven, restart-safe): expiry, 48h check-in for no-expiry offers, 12h pending auto-decline
 6. Access gating switch (`MEMBER_CHATS` via `getChatMember`), admin commands
 7. ~~Deployment~~ ✔ — Dockerfile, compose.yml, webhook mode, docs/deployment.md (first real deploy pending)

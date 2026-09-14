@@ -3,22 +3,22 @@
 Posting, browsing, editing, pausing/resuming and closing swap offers.
 Spec: [spec.md](../spec.md) → Domain model, Mini app screens 1/2/4/5, Business rules.
 
-**Status (2026-09-13):** API, mini app and the channel post done. Bot entry points and the expiry
-job belong to later phases (see the table — "pending" cells are the drift checklist).
+**Status (2026-09-14):** API, mini app, channel post and the bot chat all done; the expiry job
+belongs to the scheduler phase. The bot's own side is described in [bot.md](bot.md).
 
 ## The same feature on each surface
 
-| Action                 | Mini app                                                                                                        | Bot chat                                           | Channel                                 |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------- |
-| Browse                 | `/` `BrowsePage` — chips filter by give currency; only `active` offers (paused/finished ones live in My offers) | `/board` → opens the app _(pending)_               | —                                       |
-| Detail                 | `/offers/$offerId` `OfferPage` — header, progress (filled grey / reserved amber), details, note, other takers   | —                                                  | one post per offer, `channel.ts`        |
-| Create                 | `/offers/new` `OfferForm`                                                                                       | `/new` step-by-step wizard _(pending, bot-parity)_ | post published on create                |
-| Edit                   | `/offers/$offerId/edit`                                                                                         | Edit button under `/mine` cards _(pending)_        | post edited in place                    |
-| Pause / Resume / Close | `OfferActions` on detail (own offers) and on My offers                                                          | buttons under `/mine` cards _(pending)_            | "● Paused" line / post deleted on close |
-| My offers              | `/my` `MyOffersPage` (Your requests section arrives with claims)                                                | `/mine` _(pending)_                                | —                                       |
+| Action                 | Mini app                                                                                                        | Bot chat                                        | Channel                                 |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | --------------------------------------- |
+| Browse                 | `/` `BrowsePage` — chips filter by give currency; only `active` offers (paused/finished ones live in My offers) | `/board`, [Browse offers] → the mini app        | —                                       |
+| Detail                 | `/offers/$offerId` `OfferPage` — header, progress (filled grey / reserved amber), details, note, other takers   | —                                               | one post per offer, `channel.ts`        |
+| Create                 | `/offers/new` `OfferForm`                                                                                       | `/new` step-by-step wizard, [New offer]         | post published on create                |
+| Edit                   | `/offers/$offerId/edit`                                                                                         | [Edit] on a `/mine` card: the wizard, prefilled | post edited in place                    |
+| Pause / Resume / Close | `OfferActions` on detail (own offers) and on My offers                                                          | buttons on a `/mine` card ([Close] asks first)  | "● Paused" line / post deleted on close |
+| My offers              | `/my` `MyOffersPage` (Your requests section arrives with claims)                                                | `/mine`, [My offers] — a card per offer         | —                                       |
 
-Deep links: `startapp=offer_<id>` → `/offers/<id>`; `take_<id>` lands on the same page until the
-claims feature adds the take flow. Parsing: `parseStartParam` in `@sarraf/shared`.
+Deep links: `startapp=offer_<id>` → `/offers/<id>`, `startapp=take_<id>` → the take screen, and
+`?start=take_<id>` runs the bot's take wizard. Parsing: `parseStartParam` in `@sarraf/shared`.
 
 ## API — `apps/bot/src/features/offers/api.ts` (all behind `telegramAuth`)
 
@@ -38,7 +38,8 @@ codes to `error-*` strings. Amounts in requests and responses are integer minor 
 
 - Input validation is `OfferInput` from `@sarraf/shared` (give ≠ get, methods ⊆ `CURRENCY_METHODS`,
   rate > 0 unless negotiable, note ≤ 200, expiry ∈ {6, 12, 24, 48, null}). Callers must pass parsed
-  input; the API does this with `zValidator`, the bot wizard must call `OfferInput.parse`.
+  input; the API does this with `zValidator`, the bot wizard calls `OfferInput.parse` at the end of
+  its questions.
 - `rate = null` forces `negotiable = true`.
 - Edit: new amount ≥ filled + reserved; not allowed once closed/completed/expired.
 - Transitions: pause (active→paused), resume (paused→active), close (active|paused→closed).
@@ -54,6 +55,9 @@ codes to `error-*` strings. Amounts in requests and responses are integer minor 
   `queueChannelSync` deletes the post.
 
 ## Channel — `apps/bot/src/features/offers/channel.ts`
+
+The post body is `renderOffer(offer, t)` in `render.ts`, shared with the bot's own cards: the
+channel renders it with `i18n.t('en', …)`, the bot with `ctx.t`.
 
 `queueChannelSync(offerId)` is called at the end of `createOffer` / `updateOffer` /
 `applyOfferAction`; `startChannelSync({ api, db, chat, botUsername })` wires it in `main.ts` after

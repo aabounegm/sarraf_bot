@@ -4,18 +4,18 @@ The handshake: a taker requests part of an offer, the poster confirms or decline
 the deal done. Spec: [spec.md](../spec.md) → Domain model (Claim), Mini app screens 2/3/5, Bot
 handshake notifications, Business rules.
 
-**Status (2026-09-13):** done on all three surfaces. What is left belongs to other phases: the
-`/start take_<id>` wizard (bot parity) and the 12 h auto-decline (scheduler).
+**Status (2026-09-14):** done on all three surfaces, bot chat included. What is left belongs to the
+scheduler phase: the 12 h auto-decline.
 
 ## The same feature on each surface
 
-| Action          | Mini app                                                            | Bot chat                                                                         | Channel                             |
-| --------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------- |
-| Take            | `/offers/$offerId/take` `TakePage` (deep link `startapp=take_<id>`) | request DM to the poster; wizard from `?start=take_<id>` _(pending, bot-parity)_ | "N requested" line; Take button     |
-| Confirm/Decline | `ClaimRow` under the offer in My offers                             | [Confirm] [Decline] on that DM                                                   | reserved amount moves the status    |
-| Cancel/Release  | `ClaimCard` on the offer detail (taker), `ClaimRow` (poster)        | [Release] on the poster's card; the other side is told                           | amount returns to available         |
-| Mark done       | `ClaimCard` / `ClaimRow`, two-sided                                 | [Mark as done], then [Done on my side too] / [Not yet]                           | post deleted once the offer is full |
-| Your requests   | `/my` → "Your requests" (`RequestRow`)                              | `/mine` _(pending)_                                                              | —                                   |
+| Action          | Mini app                                                            | Bot chat                                                                   | Channel                             |
+| --------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------- |
+| Take            | `/offers/$offerId/take` `TakePage` (deep link `startapp=take_<id>`) | take wizard from `?start=take_<id>`, then the request DM to the poster     | "N requested" line; Take button     |
+| Confirm/Decline | `ClaimRow` under the offer in My offers                             | [Confirm] [Decline] on that DM                                             | reserved amount moves the status    |
+| Cancel/Release  | `ClaimCard` on the offer detail (taker), `ClaimRow` (poster)        | [Cancel request] / [Release] on either side's card; the other side is told | amount returns to available         |
+| Mark done       | `ClaimCard` / `ClaimRow`, two-sided                                 | [Mark as done], then [Done on my side too] / [Not yet]                     | post deleted once the offer is full |
+| Your requests   | `/my` → "Your requests" (`RequestRow`)                              | `/mine` — a taker card per open request, with its buttons                  | —                                   |
 
 ## API — `apps/bot/src/features/claims/api.ts` (all behind `telegramAuth`)
 
@@ -45,7 +45,7 @@ availability the other screens show. The mini app writes it straight into the de
 - Contact gating: handles are exchanged **only** between the two sides of a confirmed claim
   (`getOffer(db, id, viewerId)` and `listClaimsByTaker`). `listOffers` never reveals one.
 
-## Bot — `bot.ts` (buttons) and `notify.ts` (messages)
+## Bot — `card.ts` (rendering), `bot.ts` (buttons), `notify.ts` (messages), `wizard.ts` (take)
 
 One DM per claim carries the poster's decision, stored as `claims.posterMessageId` and
 **re-rendered on every transition, whichever surface caused it** — confirming in the mini app also
@@ -57,6 +57,10 @@ The side that did _not_ act gets a DM, because editing a message is silent; on c
 `claim-dm-*` in the catalogue, always in the **recipient's** stored locale (`users.locale`). Message
 buttons use `t.me/<username>`, falling back to `tg://user?id=` — a bot may link to a user by id, so
 a missing handle is not a dead end here (the mini app has no such fallback).
+
+`claimCard(parties, role, t)` renders the same claim from either side: the poster's request DM, and
+the taker's card under `/mine`. After a button is tapped, the card it sat on is re-rendered from the
+tapper's side unless it is the poster's request DM, which the notifier owns.
 
 Callback data is `claim:<button>:<id>` (`claimCallback` in `@sarraf/shared`). Every callback is
 answered; one on a claim that has moved on answers "Already closed" and drops the keyboard rather
@@ -80,5 +84,3 @@ A "Message X" button only appears when the other side has a Telegram username: a
   with the poster as the actor) and the taker notified.
 - Offer close already declines pending claims (`offers/service.ts`) but bypasses `applyClaimAction`,
   so those takers are not notified yet — route it through the service, or emit the events there.
-- Bot parity: `/start take_<id>` should run the take wizard; today the deep link only works for the
-  mini app's `startapp=take_<id>`.

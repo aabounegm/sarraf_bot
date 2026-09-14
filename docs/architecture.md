@@ -58,7 +58,9 @@ apps/bot/src/features/offers/
   service.ts   business logic; the only place that writes offers; used by bot.ts and api.ts
   api.ts       Hono routes for the Mini App
   bot.ts       grammY Composer: commands, callbacks, notifications
-  channel.ts   (offers only) rendering + syncing the channel post
+  wizard.ts    the conversation (step-by-step questions) the commands enter
+  render.ts    the offer as text, for the channel post and the bot's cards alike
+  channel.ts   (offers only) syncing that text with the one channel post
 ```
 
 Cross-cutting: `db/`, `bot/` (bot instance + plugins), `http/` (app + auth), `config.ts`, `main.ts`.
@@ -140,7 +142,13 @@ knows which database it talks to.
   the bot path share them: `features/claims/notify.ts`, on the same fire-and-forget queue helper as
   the channel post (`lib/telegram-queue.ts`).
 - **Callback idempotency:** every callback is answered; stale Confirm/Decline/Done buttons on a
-  closed claim answer "Already closed" and remove the keyboard.
+  closed claim answer "Already closed" and remove the keyboard. A catch-all at the end of the
+  middleware stack answers anything nobody claimed.
+- **Wizards** (`@grammyjs/conversations` v2) are entered from commands and buttons and keep their
+  replay state in the `sessions` table under a `conversation-` prefix. They never touch the
+  database except through `conversation.external`, and they hand commands, reply-keyboard buttons
+  and other features' callbacks back to the middleware instead of swallowing them. See
+  [features/bot.md](features/bot.md).
 
 ## 7. API and auth
 
@@ -187,41 +195,50 @@ Runbook: [deployment.md](deployment.md). The shape:
 
 ## 10. Decisions log
 
-| Date       | Decision                                                                                     | Notes                                                                                                             |
-| ---------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 2026-09-12 | TypeScript + grammY; Node 24 native TS; pnpm workspaces                                      | Owner requirements + zero build step                                                                              |
-| 2026-09-12 | SQLite via `node:sqlite`, Drizzle **1.0 RC**                                                 | Stable 0.45 lacks the node-sqlite driver; alternatives were `better-sqlite3` (native build) or a community driver |
-| 2026-09-12 | Drizzle `casing` option not used; camelCase columns                                          | RC removed the option; quoting makes camelCase portable                                                           |
-| 2026-09-12 | Hono for the API, one process with the bot                                                   | See §3                                                                                                            |
-| 2026-09-12 | Node serves the built Mini App too; Caddy is a single `reverse_proxy`                        | Owner: self-contained and close to dev (Vite proxy in dev gives the same one-origin shape)                        |
-| 2026-09-12 | TanStack Router (code-based) + TanStack Query; **not** TanStack Start                        | See §2/§3                                                                                                         |
-| 2026-09-12 | Channel posts: edit in place, no bump                                                        | Owner: whichever is simpler                                                                                       |
-| 2026-09-12 | Access open at first; `MEMBER_CHATS` gating later                                            | Owner decision                                                                                                    |
-| 2026-09-12 | Pending requests auto-declined after 12 h by the DB-driven scheduler                         | Owner: yes if straightforward — it is one more "due" query                                                        |
-| 2026-09-12 | Handles/names from `getMe`, env and the locale catalog; never literals                       | Owner: placeholders must be easy to change                                                                        |
-| 2026-09-12 | Mini app imports the API _type_ from `@sarraf/bot/api` (workspace dev-dependency, type-only) | One source of truth for routes and payloads; costs a slower webapp typecheck                                      |
-| 2026-09-12 | Native Telegram main/back buttons, with in-page fallbacks when the env is mocked             | Keeps the Telegram-native feel without making browser dev unusable                                                |
-| 2026-09-12 | Prototype files not kept; `docs/spec.md` + `docs/screenshots/` only                          | Superseded by `packages/shared` and the screenshots                                                               |
-| 2026-09-12 | No shared bot/Mini-App renderer; share vocabulary + per-feature docs                         | See §4                                                                                                            |
-| 2026-09-12 | Vertical slices in the backend, FSD in the Mini App                                          | FSD layers don't map to a bot                                                                                     |
-| 2026-09-12 | Fluent (`@grammyjs/i18n`) for en/ru/ar, catalog in `packages/shared`                         | Owner choice; Arabic/Russian plurals                                                                              |
-| 2026-09-12 | Oxlint + Oxfmt over Biome                                                                    | Owner preference                                                                                                  |
-| 2026-09-12 | Currency/method config in code, not a table                                                  | No admin UI exists; revisit if non-developers must edit                                                           |
-| 2026-09-12 | Money as integer minor units, rate as REAL                                                   | Display-only rate; exact amounts                                                                                  |
-| 2026-09-12 | Deployment: VPS + Docker + Caddy                                                             | Owner decision                                                                                                    |
-| 2026-09-13 | Subdomain per bot (`<bot>.bots.abounegm.com`); TMA + API + webhook on that one origin        | Owner decision after weighing paths vs subdomains (§9)                                                            |
-| 2026-09-13 | Webhook in production, polling in dev; secret derived from the bot token                     | One `PUBLIC_URL`; no extra secret to manage                                                                       |
-| 2026-09-13 | Bot-only container; the host's existing Caddy proxies to a loopback port                     | Owner already runs Caddy on the VPS                                                                               |
-| 2026-09-13 | Channel posts are English only (`i18n.t('en', …)`)                                           | One post, one mixed-language audience; per-poster locales would make the channel a language soup                  |
-| 2026-09-13 | Channel sync is an in-process promise queue keyed by offer id, wired at boot                 | One process owns the channel; a DB-backed outbox buys durability the product does not need yet                    |
-| 2026-09-13 | Paused offers leave the browse list (they stay in My offers and keep their post)             | Owner: nothing on the board should be untakeable                                                                  |
-| 2026-09-13 | Handles are only in `getOffer(…, viewerId)` / `listClaimsByTaker`, never in list payloads    | Contact gating has to hold in the payload, not only in the UI — the mini app is a client                          |
-| 2026-09-13 | A release is recorded as `declined` by the poster, `cancelled` by the taker                  | Same effect on availability; the taker's list should say honestly which happened                                  |
-| 2026-09-13 | Claim routes answer with the whole `OfferDetail`                                             | One response refreshes the claim, the availability and the other takers; no second round trip                     |
-| 2026-09-13 | `/api/dev/init-data?user=2` issues a second fake identity in development                     | A two-sided handshake cannot be tested from one browser profile otherwise                                         |
-| 2026-09-13 | One claim DM to the poster (`claims.posterMessageId`), re-rendered like the channel post     | Confirming in the mini app has to disarm the bot's buttons; two surfaces, one message to keep honest              |
-| 2026-09-13 | Stale claim buttons answer "Already closed" instead of acting                                | The service refuses the transition anyway; the callback just reports it (spec § idempotency)                      |
-| 2026-09-13 | Notifications render in the recipient's stored `users.locale`, not the actor's               | There is no `ctx` when the mini app triggers the DM                                                               |
+| Date       | Decision                                                                                         | Notes                                                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| 2026-09-12 | TypeScript + grammY; Node 24 native TS; pnpm workspaces                                          | Owner requirements + zero build step                                                                              |
+| 2026-09-12 | SQLite via `node:sqlite`, Drizzle **1.0 RC**                                                     | Stable 0.45 lacks the node-sqlite driver; alternatives were `better-sqlite3` (native build) or a community driver |
+| 2026-09-12 | Drizzle `casing` option not used; camelCase columns                                              | RC removed the option; quoting makes camelCase portable                                                           |
+| 2026-09-12 | Hono for the API, one process with the bot                                                       | See §3                                                                                                            |
+| 2026-09-12 | Node serves the built Mini App too; Caddy is a single `reverse_proxy`                            | Owner: self-contained and close to dev (Vite proxy in dev gives the same one-origin shape)                        |
+| 2026-09-12 | TanStack Router (code-based) + TanStack Query; **not** TanStack Start                            | See §2/§3                                                                                                         |
+| 2026-09-12 | Channel posts: edit in place, no bump                                                            | Owner: whichever is simpler                                                                                       |
+| 2026-09-12 | Access open at first; `MEMBER_CHATS` gating later                                                | Owner decision                                                                                                    |
+| 2026-09-12 | Pending requests auto-declined after 12 h by the DB-driven scheduler                             | Owner: yes if straightforward — it is one more "due" query                                                        |
+| 2026-09-12 | Handles/names from `getMe`, env and the locale catalog; never literals                           | Owner: placeholders must be easy to change                                                                        |
+| 2026-09-12 | Mini app imports the API _type_ from `@sarraf/bot/api` (workspace dev-dependency, type-only)     | One source of truth for routes and payloads; costs a slower webapp typecheck                                      |
+| 2026-09-12 | Native Telegram main/back buttons, with in-page fallbacks when the env is mocked                 | Keeps the Telegram-native feel without making browser dev unusable                                                |
+| 2026-09-12 | Prototype files not kept; `docs/spec.md` + `docs/screenshots/` only                              | Superseded by `packages/shared` and the screenshots                                                               |
+| 2026-09-12 | No shared bot/Mini-App renderer; share vocabulary + per-feature docs                             | See §4                                                                                                            |
+| 2026-09-12 | Vertical slices in the backend, FSD in the Mini App                                              | FSD layers don't map to a bot                                                                                     |
+| 2026-09-12 | Fluent (`@grammyjs/i18n`) for en/ru/ar, catalog in `packages/shared`                             | Owner choice; Arabic/Russian plurals                                                                              |
+| 2026-09-12 | Oxlint + Oxfmt over Biome                                                                        | Owner preference                                                                                                  |
+| 2026-09-12 | Currency/method config in code, not a table                                                      | No admin UI exists; revisit if non-developers must edit                                                           |
+| 2026-09-12 | Money as integer minor units, rate as REAL                                                       | Display-only rate; exact amounts                                                                                  |
+| 2026-09-12 | Deployment: VPS + Docker + Caddy                                                                 | Owner decision                                                                                                    |
+| 2026-09-13 | Subdomain per bot (`<bot>.bots.abounegm.com`); TMA + API + webhook on that one origin            | Owner decision after weighing paths vs subdomains (§9)                                                            |
+| 2026-09-13 | Webhook in production, polling in dev; secret derived from the bot token                         | One `PUBLIC_URL`; no extra secret to manage                                                                       |
+| 2026-09-13 | Bot-only container; the host's existing Caddy proxies to a loopback port                         | Owner already runs Caddy on the VPS                                                                               |
+| 2026-09-13 | Channel posts are English only (`i18n.t('en', …)`)                                               | One post, one mixed-language audience; per-poster locales would make the channel a language soup                  |
+| 2026-09-13 | Channel sync is an in-process promise queue keyed by offer id, wired at boot                     | One process owns the channel; a DB-backed outbox buys durability the product does not need yet                    |
+| 2026-09-13 | Paused offers leave the browse list (they stay in My offers and keep their post)                 | Owner: nothing on the board should be untakeable                                                                  |
+| 2026-09-13 | Handles are only in `getOffer(…, viewerId)` / `listClaimsByTaker`, never in list payloads        | Contact gating has to hold in the payload, not only in the UI — the mini app is a client                          |
+| 2026-09-13 | A release is recorded as `declined` by the poster, `cancelled` by the taker                      | Same effect on availability; the taker's list should say honestly which happened                                  |
+| 2026-09-13 | Claim routes answer with the whole `OfferDetail`                                                 | One response refreshes the claim, the availability and the other takers; no second round trip                     |
+| 2026-09-13 | `/api/dev/init-data?user=2` issues a second fake identity in development                         | A two-sided handshake cannot be tested from one browser profile otherwise                                         |
+| 2026-09-13 | One claim DM to the poster (`claims.posterMessageId`), re-rendered like the channel post         | Confirming in the mini app has to disarm the bot's buttons; two surfaces, one message to keep honest              |
+| 2026-09-13 | Stale claim buttons answer "Already closed" instead of acting                                    | The service refuses the transition anyway; the callback just reports it (spec § idempotency)                      |
+| 2026-09-13 | Notifications render in the recipient's stored `users.locale`, not the actor's                   | There is no `ctx` when the mini app triggers the DM                                                               |
+| 2026-09-14 | Bot wizards use `@grammyjs/conversations` v2, state in the `sessions` table (`conversation-`)    | Owner's plan; the alternative was a hand-rolled step machine in the session                                       |
+| 2026-09-14 | A wizard halts on a command or a menu button and skips foreign callbacks, both with `next: true` | Otherwise a half-finished `/new` silently eats `/mine` and every claim button in the chat                         |
+| 2026-09-14 | `/start` carries the reply keyboard only; [Browse offers] is a `web_app` keyboard button         | One message carries one markup, and the keyboard already opens the app; the inline button moved to `/board`       |
+| 2026-09-14 | One offer renderer for the channel post and the bot cards, parameterised by the translator       | They are the same text in two languages: the channel stays English, the chat uses `ctx.t`                         |
+| 2026-09-14 | The poster answers requests on the claim DM; `/mine` cards list them as text                     | That DM is already re-rendered from every surface — a second set of buttons would be a second truth               |
+| 2026-09-14 | `/mine` shows only active and paused offers and open requests                                    | The chat carries what you can act on; history is what the mini app is for                                         |
+| 2026-09-14 | [Close] in the chat asks before it closes (`offer:close` → `closenow` / `keep`)                  | Closing deletes the post and declines pending requests; the mini app confirms too                                 |
+| 2026-09-14 | Wizard step buttons carry no id and live in `bot/wizard.ts`, not in `packages/shared`            | They last as long as one question, are read three lines from where they are built, and are bot-only               |
+| 2026-09-14 | Tests record Telegram at the `fetch` level (`createBot(config, db, client)`)                     | A conversation builds its own `Api`, so a transformer on `bot.api` never sees what a wizard sends                 |
 
 ## 11. Roadmap (suggested order — dependency and value)
 
@@ -233,8 +250,10 @@ Runbook: [deployment.md](deployment.md). The shape:
 3. ~~**Claims handshake**~~ — done 2026-09-13 on all three surfaces (`features/claims`: service, API,
    take screen, claim cards, request DMs with Confirm/Decline, two-sided Done, contact gating,
    idempotent stale buttons). See docs/features/claims.md.
-4. **Bot parity** — `/new` wizard via `@grammyjs/conversations`, `/mine`, reply keyboard, `/board`,
-   and the take wizard from `?start=take_<id>` (same service as the Mini App take).
+4. ~~**Bot parity**~~ — done 2026-09-14: reply keyboard, `/new` and [Edit] wizard, `/mine` with
+   offer and request cards, `/board`, `/help`, `/cancel`, and the take wizard from
+   `?start=take_<id>`, all on the same services as the Mini App. See
+   [features/bot.md](features/bot.md).
 5. **Scheduler** — expiry, 48 h check-ins for no-expiry offers, auto-pause, 12 h pending auto-decline.
 6. **Access & admin** — switch on `MEMBER_CHATS` gating, per-user rate limits, admin remove/ban.
 7. ~~**Deploy**~~ — Dockerfile, compose, webhook mode, runbook: done 2026-09-13 (first real deploy pending).
