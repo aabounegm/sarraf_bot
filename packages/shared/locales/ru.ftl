@@ -135,6 +135,12 @@ error-offer-unavailable = Это предложение больше недос�
 error-already-claimed = У вас уже есть запрос на это предложение.
 error-amount-exceeds-remaining = Осталось только { $amount }.
 error-invalid-transition = Этот запрос уже обработан.
+error-offer-not-found = Такого предложения нет.
+error-claim-not-found = Такого запроса нет.
+error-not-your-offer = Это не ваше предложение.
+error-not-your-claim = Это не ваш запрос.
+error-offer-finished = Это предложение уже завершено.
+error-unknown-method = Такого способа оплаты нет в предложении.
 
 ## Bot — claim notifications
 claim-request = { $name } хочет взять { $amount } из вашего предложения #{ $id } ({ $total } через { $method }). Оно ещё актуально?
@@ -153,3 +159,54 @@ claim-dm-completed = Сделка завершена: { $amount } с { $name }.
 done-too = Выполнено и с моей стороны
 not-yet = Ещё нет
 already-closed = Уже закрыто
+
+## Bot — menu and commands
+menu-browse = Смотреть предложения
+menu-help = Помощь
+board-hint = Вся доска с фильтрами и вашей историей — в мини-приложении.
+help =
+    Что я умею:
+
+    /new — разместить предложение, по одному вопросу за раз
+    /mine — ваши предложения и запросы вместе с кнопками управления
+    /board — открыть мини-приложение
+    /cancel — прервать текущий шаг
+
+    Я никогда не держу деньги. Я поддерживаю каждое предложение в { $channel } в актуальном состоянии и знакомлю стороны, когда обе согласны.
+mine-claim = { $name } · { $amount } через { $method } · { $status }
+mine-offer-gone = Этого предложения больше нет в вашем списке.
+
+## Bot — new offer wizard
+wizard-new = Новое предложение.
+wizard-editing = Редактируем #{ $id }.
+wizard-give-currency = Что вы отдаёте?
+wizard-give-amount = Сколько { $currency }?
+wizard-give-methods = Как вы отправите { $currency }? Выберите все подходящие.
+wizard-get-currency = А что хотите получить?
+wizard-get-methods = Как вам смогут заплатить в { $currency }? Выберите все подходящие.
+wizard-pick-one = Выберите хотя бы одно
+wizard-done-count = Готово ({ $count })
+wizard-rate = Какой у вас курс? Отправьте число — 1 { $base } = … { $quote }.
+wizard-no-rate = Договорной, без курса
+wizard-rate-kind = 1 { $base } = { $rate } { $quote }. Это фиксированный курс или желаемый?
+wizard-fixed = Фиксированный
+wizard-asking = Желаемый · договорной
+wizard-expiry = Сколько предложение должно висеть?
+wizard-expiry-now = Сейчас: { $when }.
+wizard-note = Добавить заметку? До { $max } символов.
+wizard-skip = Пропустить
+wizard-keep = Оставить { $value }
+wizard-preview = Вот ваше предложение:
+wizard-post = Опубликовать в канале
+wizard-restart = Начать заново
+wizard-posted = Опубликовано. #{ $id } в { $channel } — напишу вам, как только кто-то захочет взять часть.
+wizard-saved = Сохранено. #{ $id } обновлено, пост в канале тоже.
+wizard-cancelled = Отменено.
+wizard-bad-amount = Отправьте сумму числом, например 200.
+wizard-bad-rate = Отправьте курс числом, например 96.5.
+wizard-too-long = Здесь { $count } символов, а предел — { $max }. Попробуйте короче.
+wizard-use-buttons = Используйте кнопки выше или /cancel.
+
+## Bot — take wizard
+take-amount-hint = { $max }. Отправьте число или:
+take-preview = Вы запрашиваете { $amount } из #{ $id }, { $total }, через { $method }.

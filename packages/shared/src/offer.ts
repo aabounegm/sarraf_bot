@@ -107,7 +107,14 @@ export function parseStartParam(value: string | undefined): StartParam | null {
 }
 
 /** Inline-button payloads on the bot's claim messages, e.g. `claim:confirm:42`. */
-export const CLAIM_BUTTONS = ['confirm', 'decline', 'release', 'done', 'dismiss'] as const;
+export const CLAIM_BUTTONS = [
+  'confirm',
+  'decline',
+  'cancel',
+  'release',
+  'done',
+  'dismiss',
+] as const;
 export type ClaimButton = (typeof CLAIM_BUTTONS)[number];
 
 export const claimCallback = (button: ClaimButton, claimId: number) => `claim:${button}:${claimId}`;
@@ -117,6 +124,22 @@ export function parseClaimCallback(data: string): { button: ClaimButton; claimId
   const m = CLAIM_CALLBACK.exec(data);
   const button = m?.[1] as ClaimButton | undefined;
   return button && CLAIM_BUTTONS.includes(button) ? { button, claimId: Number(m![2]) } : null;
+}
+
+/**
+ * Inline-button payloads on the bot's own offer cards (`/mine`), e.g. `offer:pause:42`.
+ * `close` only asks; `closenow` closes and `keep` puts the card back, because closing is final.
+ */
+export const OFFER_BUTTONS = ['edit', 'pause', 'resume', 'close', 'closenow', 'keep'] as const;
+export type OfferButton = (typeof OFFER_BUTTONS)[number];
+
+export const offerCallback = (button: OfferButton, offerId: number) => `offer:${button}:${offerId}`;
+export const OFFER_CALLBACK = /^offer:([a-z]+):(\d+)$/;
+
+export function parseOfferCallback(data: string): { button: OfferButton; offerId: number } | null {
+  const m = OFFER_CALLBACK.exec(data);
+  const button = m?.[1] as OfferButton | undefined;
+  return button && OFFER_BUTTONS.includes(button) ? { button, offerId: Number(m![2]) } : null;
 }
 
 /** Link that opens the mini app on an offer; short name `app` is set in BotFather (docs/deployment.md). */

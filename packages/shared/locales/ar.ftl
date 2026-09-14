@@ -137,6 +137,12 @@ error-offer-unavailable = لم يعد هذا العرض متاحاً.
 error-already-claimed = لديك طلب قائم على هذا العرض.
 error-amount-exceeds-remaining = المتبقي { $amount } فقط.
 error-invalid-transition = تمت معالجة هذا الطلب بالفعل.
+error-offer-not-found = هذا العرض غير موجود.
+error-claim-not-found = هذا الطلب غير موجود.
+error-not-your-offer = هذا ليس عرضك.
+error-not-your-claim = هذا ليس طلبك.
+error-offer-finished = هذا العرض منتهٍ بالفعل.
+error-unknown-method = طريقة الدفع هذه ليست ضمن العرض.
 
 ## Bot — claim notifications
 claim-request = يريد { $name } أخذ { $amount } من عرضك #{ $id } ({ $total } عبر { $method }). هل ما زال متاحاً؟
@@ -155,3 +161,54 @@ claim-dm-completed = اكتملت الصفقة: { $amount } مع { $name }.
 done-too = تم من جهتي أيضاً
 not-yet = ليس بعد
 already-closed = مغلق بالفعل
+
+## Bot — menu and commands
+menu-browse = تصفّح العروض
+menu-help = مساعدة
+board-hint = اللوحة كاملة، بالفلاتر وسجلّك، في التطبيق المصغّر.
+help =
+    ما يمكنني فعله:
+
+    /new — انشر عرضاً، سؤالاً واحداً في كل مرة
+    /mine — عروضك وطلباتك مع أزرار إدارتها
+    /board — افتح التطبيق المصغّر
+    /cancel — أوقف ما نحن بصدده
+
+    أنا لا أحتفظ بالأموال أبداً. أبقي كل عرض في { $channel } محدّثاً، وأعرّف الطرفين ببعضهما حين يتفقان.
+mine-claim = { $name } · { $amount } عبر { $method } · { $status }
+mine-offer-gone = لم يعد هذا العرض في قائمتك.
+
+## Bot — new offer wizard
+wizard-new = عرض جديد.
+wizard-editing = تعديل #{ $id }.
+wizard-give-currency = ماذا تعطي؟
+wizard-give-amount = كم { $currency }؟
+wizard-give-methods = كيف سترسل { $currency }؟ اختر كل ما ينطبق.
+wizard-get-currency = وماذا تريد أن تحصل عليه؟
+wizard-get-methods = كيف يمكنهم الدفع لك بـ { $currency }؟ اختر كل ما ينطبق.
+wizard-pick-one = اختر واحداً على الأقل
+wizard-done-count = تم ({ $count })
+wizard-rate = ما سعرك؟ أرسل رقماً — 1 { $base } = … { $quote }.
+wizard-no-rate = قابل للتفاوض، بلا سعر
+wizard-rate-kind = 1 { $base } = { $rate } { $quote }. هل هو ثابت أم هذا ما تطلبه؟
+wizard-fixed = ثابت
+wizard-asking = مطلوب · قابل للتفاوض
+wizard-expiry = كم يبقى العرض منشوراً؟
+wizard-expiry-now = حالياً: { $when }.
+wizard-note = تضيف ملاحظة؟ حتى { $max } حرفاً.
+wizard-skip = تخطٍّ
+wizard-keep = أبقِ { $value }
+wizard-preview = هذا عرضك:
+wizard-post = انشر في القناة
+wizard-restart = ابدأ من جديد
+wizard-posted = نُشر. #{ $id } الآن في { $channel } — سأراسلك حالما يطلب أحدهم جزءاً منه.
+wizard-saved = حُفظ. #{ $id } محدّث، ومنشور القناة كذلك.
+wizard-cancelled = أُلغي.
+wizard-bad-amount = أرسل المبلغ رقماً، مثل 200.
+wizard-bad-rate = أرسل السعر رقماً، مثل 96.5.
+wizard-too-long = هذا { $count } حرفاً والحد { $max }. جرّب نصاً أقصر.
+wizard-use-buttons = استخدم الأزرار أعلاه، أو /cancel.
+
+## Bot — take wizard
+take-amount-hint = { $max }. أرسل رقماً، أو:
+take-preview = تطلب { $amount } من #{ $id }، { $total }، عبر { $method }.
