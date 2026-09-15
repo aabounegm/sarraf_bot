@@ -58,8 +58,17 @@ export function totalText(
     : amountText(convert(o.giveCurrency, o.getCurrency, o.rate, amount), o.getCurrency);
 }
 
+/** Green = take it now, amber = part of it left, red = it stopped; anything else keeps the plain dot. */
+const DOTS: Record<string, string> = {
+  active: '🟢',
+  partial: '🟡',
+  paused: '🔴',
+  expired: '🔴',
+};
+const statusLine = (key: string, t: Translate) => `${DOTS[key] ?? '●'} ${t(`status-${key}`)}`;
+
 function statusLines(o: OfferDetail, t: Translate): string[] {
-  if (o.status !== 'active') return [`● ${t(`status-${o.status}`)}`];
+  if (o.status !== 'active') return [statusLine(o.status, t)];
   const { remaining, reserved, requested } = o.availability;
   const partial = remaining !== o.giveAmount;
   const left = partial
@@ -73,7 +82,7 @@ function statusLines(o: OfferDetail, t: Translate): string[] {
     requested > 0 && t('awaiting-confirmation', { amount: amountText(requested, o.giveCurrency) }),
   ].filter((x): x is string => Boolean(x));
   return [
-    `● ${t(partial ? 'status-partial' : 'status-active')} — ${left}`,
+    `${statusLine(partial ? 'partial' : 'active', t)} — ${left}`,
     ...(contention.length > 0 ? [contention.join(' · ')] : []),
   ];
 }

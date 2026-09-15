@@ -172,7 +172,7 @@ test('a no-expiry offer is asked once at 48h and paused after 24h of silence', a
   assert.match(paused.text!, /is paused/);
   assert.deepEqual(paused.buttons, ['Resume']);
   assert.ok(
-    calls.some((c) => c.method === 'edit' && c.to === '@innoexchange' && /● Paused/.test(c.text!)),
+    calls.some((c) => c.method === 'edit' && c.to === '@innoexchange' && /🔴 Paused/.test(c.text!)),
     'the channel post says Paused',
   );
 });

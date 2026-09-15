@@ -76,7 +76,7 @@ test('renders the post: pair, rate with total, methods, note, status, footer', (
     'RUB: SBP, Tinkoff',
     '<i>Technopark lobby</i>',
   ]);
-  assert.equal(lines[5], '● Active — 200 USDT available');
+  assert.equal(lines[5], '🟢 Active — 200 USDT available');
   assert.match(lines[6]!, /^#\d+ · Alex, 0 deals · expires (today|tomorrow) \d\d:\d\d$/);
 });
 
@@ -107,11 +107,11 @@ test('renders paused, negotiable, no-expiry and partially claimed offers', () =>
     ])
     .run();
   const claimed = post(db, open.id).split('\n');
-  assert.equal(claimed[4], '● Partially filled — 150 of 200 USDT left');
+  assert.equal(claimed[4], '🟡 Partially filled — 150 of 200 USDT left');
   assert.equal(claimed[5], '50 USDT reserved · 20 USDT requested, awaiting confirmation');
 
   applyOfferAction(db, nour.id, open.id, 'pause');
-  assert.equal(post(db, open.id).split('\n')[4], '● Paused');
+  assert.equal(post(db, open.id).split('\n')[4], '🔴 Paused');
 });
 
 test('escapes HTML in names and notes', () => {
@@ -142,7 +142,7 @@ test('publishes on create, edits in place on change, deletes when closed', async
   assert.equal(calls.at(-1)?.method, 'edit');
   assert.deepEqual(calls.at(-1)?.buttons, ['Open InnoExchange'], 'nothing to take while paused');
   assert.equal(calls.at(-1)?.messageId, 100);
-  assert.ok(calls.at(-1)?.text?.includes('● Paused'));
+  assert.ok(calls.at(-1)?.text?.includes('🔴 Paused'));
 
   applyOfferAction(db, alex.id, offer.id, 'close');
   await flushChannelSync();

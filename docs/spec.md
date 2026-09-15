@@ -119,9 +119,9 @@ Alex gives 200 USDT for RUB
 USDT: TRC20
 RUB: SBP, Tinkoff
 <note, italic, if any>
-● Active — 200 USDT available            (green dot)
-● Partially filled — 100 USDT left       (amber)  + "100 USDT reserved" / "100 USDT requested, awaiting confirmation"
-● Paused                                 (grey)
+🟢 Active — 200 USDT available
+🟡 Partially filled — 100 USDT left       + "100 USDT reserved" / "100 USDT requested, awaiting confirmation"
+🔴 Paused                                 (red for expired too; closed/completed keep a plain ●)
 #1042 · Alex, 14 deals · expires today 20:00
 [Take] [Open in InnoExchange]
 ```
