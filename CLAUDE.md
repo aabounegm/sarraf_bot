@@ -126,8 +126,8 @@ and [docs/features/bot.md](docs/features/bot.md). Working on **both** surfaces:
 create/browse/detail/edit/pause/resume/close/repost; take → confirm/decline → two-sided done (request DM
 with [Confirm] [Decline], re-rendered on every transition, stale buttons answer "Already closed");
 "Your requests"; contact gating; every mutation re-renders the channel post (verified against a real
-channel). In the chat: the reply keyboard, Telegram's "/" menu (`setMyCommands` at boot, the same
-list `/help` prints), the `/new` and [Edit] wizards, `/mine` cards with their
+channel). In the chat: the reply keyboard, Telegram's "/" menu and the mini-app button next to the
+input (both set at boot by `registerMenu`; the menu is the same list `/help` prints), the `/new` and [Edit] wizards, `/mine` cards with their
 buttons, `/board`, `/help`, `/cancel`, and the take wizard from `?start=take_<id>`, all calling the
 same services as the API. Dev-in-browser works end to end — `?user=2` in the URL gives a second
 identity, which is how the handshake is tested from one machine.

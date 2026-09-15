@@ -24,8 +24,14 @@ get their own subdomain, container and published port.
        reverse_proxy 127.0.0.1:3000
    }
    ```
-3. **BotFather** — for the production bot: `/newapp` (short name `app`, URL `https://innoexchange.bots.abounegm.com`)
-   and/or the Menu Button URL. Make the bot an admin of the offers channel.
+3. **BotFather** — for the production bot, and make it an admin of the offers channel:
+   - `/newapp`, short name **`app`**, URL `https://innoexchange.bots.abounegm.com` — this is what
+     makes the channel post's `t.me/<bot>/app?startapp=offer_1042` links open the mini app
+     (`miniAppLink` in `packages/shared`; the short name is baked in there).
+   - _Bot Settings → Configure Mini App → Enable_, same URL — the "Open App" button on the bot's
+     profile. There is no Bot API method for either of these two; they are BotFather-only.
+   - The **Menu Button** needs nothing here: the bot sets it to the mini app on every boot
+     (`registerMenu`, [features/bot.md](features/bot.md)), together with the "/" command menu.
 4. **Server checkout** — `git clone … && cd sarraf_bot`, then create `apps/bot/.env`:
    ```
    BOT_TOKEN=…

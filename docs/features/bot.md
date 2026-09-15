@@ -29,12 +29,23 @@ so they work in every locale. **Deviation from the spec:** `/start` sends _one_ 
 carries either a reply keyboard or an inline keyboard, not both, and the keyboard's first button
 already opens the mini app, so the separate inline "Open InnoExchange" button lives in `/board`.
 
-Telegram's "/" menu is filled at boot: `registerCommands` (`bot/menu.ts`) is called from `main.ts`
-after `bot.init()` and sends `setMyCommands` four times — the English default plus one call per
-locale, all scoped `all_private_chats`, because this is a private-chat product. It is fire and
-forget: a rejection is logged, and an empty "/" menu costs a tap, nothing more. `/start` is left
-out of it on purpose — the client offers it as a Start button before the chat begins, and after
-that the reply keyboard is the way back to the menu.
+What Telegram shows before the user types anything is registered at boot by `registerMenu`
+(`bot/menu.ts`), called from `main.ts` after `bot.init()` and fire and forget — a rejection is
+logged, and both of its halves are shortcuts to something the chat already offers:
+
+- **The "/" menu** — `setMyCommands` four times: the English default plus one call per locale, all
+  scoped `all_private_chats`, because this is a private-chat product. `/start` is left out on
+  purpose: the client offers it as a Start button before the chat begins, and after that the reply
+  keyboard is the way back to the menu.
+- **The button next to the message input** — `setChatMenuButton` with a `web_app` button that opens
+  the mini app. It _replaces_ the commands button that would otherwise sit there; typing `/` still
+  completes the commands, and the reply keyboard still has [Browse offers]. There is one default
+  button and no `language_code` on that method, so its label is English for everyone, like the
+  channel post. Per-chat calls in `/start` would localise it, at one API call per `/start`.
+
+The bot's profile page ("Open App") and the `t.me/<bot>/app?startapp=` links in the channel post are
+_not_ set from here: the mini app is registered in BotFather (see
+[deployment.md](../deployment.md) step 3), and no Bot API method can do it.
 
 The menu and `/help` are **one list**: `COMMANDS` in `bot/menu.ts`, built from the `*_COMMAND`
 constants the handlers themselves register with (`/new` and `/mine` are handled in

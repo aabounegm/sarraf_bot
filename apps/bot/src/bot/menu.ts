@@ -41,10 +41,12 @@ const commandLines = (t: (key: string) => string) =>
   COMMANDS.map((command) => `/${command} — ${t(`command-${command}`)}`).join('\n');
 
 /**
- * One `setMyCommands` per locale plus the default (English), private chats only. Called at boot,
- * not from `createBot`; a rejection is logged and nothing else — an empty "/" menu costs a tap.
+ * What Telegram itself shows before the user says anything: the "/" menu (one `setMyCommands` per
+ * locale plus the English default, private chats only) and the button next to the message input.
+ * Called at boot, not from `createBot`; a rejection is logged and nothing else — both are shortcuts
+ * to things the chat already offers.
  */
-export function registerCommands(api: Api) {
+export function registerMenu(api: Api, url: string) {
   const scope = { type: 'all_private_chats' } as const;
   const list = (locale: string) =>
     COMMANDS.map((command) => ({ command, description: i18n.t(locale, `command-${command}`) }));
@@ -55,6 +57,11 @@ export function registerCommands(api: Api) {
     ...i18n.locales.map((locale) =>
       api.setMyCommands(list(locale), { scope, language_code: locale as LanguageCode }),
     ),
+    // This takes the place of the commands button; the commands stay on typing "/". English for
+    // everyone: unlike setMyCommands, there is one default button and no `language_code`.
+    api.setChatMenuButton({
+      menu_button: { type: 'web_app', text: i18n.t('en', 'menu-browse'), web_app: { url } },
+    }),
   ]);
 }
 
