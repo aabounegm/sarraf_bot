@@ -58,12 +58,49 @@ test('a request is a DM to the poster with Confirm/Decline, kept up to date afte
   );
 
   const toTaker = sent(nour.id).at(-1)!;
-  assert.match(toTaker.text!, /Alex confirmed — 50 USDT is yours/);
+  assert.match(toTaker.text!, /Alex confirmed — it's yours/);
+  assert.match(toTaker.text!, /Message them at @alex/, 'the handle, now that it is earned');
   assert.deepEqual(
     toTaker.buttons.map((b) => b.text),
-    ['Message Alex'],
+    ['Message Alex', 'Mark as done', 'Release my reservation'],
+    'the taker can answer from the notification itself',
   );
-  assert.equal(toTaker.buttons[0]?.url, 'https://t.me/alex', 'the handle, now that it is earned');
+  assert.equal(toTaker.buttons[0]?.url, 'https://t.me/alex');
+});
+
+test('a contact button Telegram refuses costs the button, not the notification', async () => {
+  const { db, tap, sent, refuseNext } = chat();
+  // No username on either side, so both cards link by id — the link Telegram may refuse.
+  const dana = { id: 3, first_name: 'Dana' };
+  const offer = createOffer(db, dana, input);
+  createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
+  await flushClaimNotifications();
+
+  // What a `tg://user?id=` link to someone whose privacy settings forbid it answers with.
+  refuseNext('sendMessage', 'Bad Request: BUTTON_USER_PRIVACY_RESTRICTED');
+  await tap(dana, 'Confirm');
+  await flushClaimNotifications();
+
+  const toTaker = sent(nour.id).at(-1)!;
+  assert.match(toTaker.text!, /Dana confirmed — it's yours/, 'the news still arrived');
+  assert.deepEqual(
+    toTaker.buttons.map((b) => b.text),
+    ['Mark as done', 'Release my reservation'],
+    'only the link Telegram refused is gone',
+  );
+});
+
+test('a poster card that cannot be edited does not cost the taker the news', async () => {
+  const { db, tap, sent, refuseNext } = chat();
+  const offer = createOffer(db, alex, input);
+  createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
+  await flushClaimNotifications();
+
+  refuseNext('editMessageText', "Bad Request: message can't be edited");
+  await tap(alex, 'Confirm');
+  await flushClaimNotifications();
+
+  assert.match(sent(nour.id).at(-1)!.text!, /Alex confirmed — it's yours/);
 });
 
 test('a button on a claim that moved on says so instead of acting twice', async () => {

@@ -30,13 +30,21 @@ export function ClaimCard({ offer, claim }: { offer: OfferDetail; claim: Claim }
         ? l10n.getString('claim-you-marked-done', { name })
         : l10n.getString('claim-yours', { name });
 
+  // The handle in text as well as in the button, like the bot's card: a button only opens a chat,
+  // and there is none at all for a poster whose handle the mini app cannot link to.
+  const handle = claim.status === 'confirmed' ? offer.poster.username : null;
+
   return (
     <Section>
       <Cell
         multiline
         before={<Dot color={pending ? COLOR_WARN : COLOR_OK} />}
         subtitle={requestText(l10n, offer, claim)}
-        description={pending ? l10n.getString('claim-waiting-hint', { name }) : undefined}
+        description={
+          pending
+            ? l10n.getString('claim-waiting-hint', { name })
+            : handle && l10n.getString('contact-handle', { handle })
+        }
       >
         {title}
       </Cell>

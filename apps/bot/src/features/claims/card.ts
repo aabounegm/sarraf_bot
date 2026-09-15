@@ -67,7 +67,7 @@ function posterCard(p: Parties, t: Translate, event?: ClaimEvent) {
         .text(t('decline'), claimCallback('decline', p.claim.id));
       break;
     case 'confirmed':
-      lines.push(t('claim-line-confirmed', { name }));
+      lines.push(t('claim-line-confirmed', { name }), ...contact(p.taker, t));
       if (p.claim.takerDone) lines.push(t('claim-line-waiting-you', { name }));
       if (p.claim.posterDone) lines.push(t('claim-line-waiting-them', { name }));
       buttons.url(t('message-user', { name }), chatLink(p.taker)).row();
@@ -107,7 +107,7 @@ function takerCard(p: Parties, t: Translate) {
       buttons.text(t('cancel-request'), claimCallback('cancel', p.claim.id));
       break;
     case 'confirmed':
-      lines.push(t('claim-yours', { name }));
+      lines.push(t('claim-yours', { name }), ...contact(p.poster, t));
       if (p.claim.posterDone) lines.push(t('claim-line-waiting-you', { name }));
       if (p.claim.takerDone) lines.push(t('claim-you-marked-done', { name }));
       buttons.url(t('message-user', { name }), chatLink(p.poster)).row();
@@ -126,6 +126,13 @@ function takerCard(p: Parties, t: Translate) {
   }
   return { text: lines.join('\n'), reply_markup: buttons };
 }
+
+/**
+ * The handle in the text, next to the button that uses it: a link only opens a chat, while an
+ * @handle can be copied, searched and read out. Only ever called from a confirmed claim.
+ */
+const contact = (other: UserRow, t: Translate) =>
+  other.username ? [t('contact-handle', { handle: other.username })] : [];
 
 /** Bots may link to a user by id, so a missing @username is not a dead end here. */
 export const chatLink = (user: UserRow) =>

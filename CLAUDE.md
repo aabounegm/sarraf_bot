@@ -139,7 +139,7 @@ due — expire the offer (post deleted, poster gets `[Repost]`), time out a 12h-
 (taker told), ping the poster of a no-expiry offer every 48h (`[Yes, still on]` `[Pause]` `[Close]`) and
 pause it 24h later if nobody answers. Every job calls the same services the buttons do, so there is
 one code path per outcome; the due-work is `runDueWork(db, now)`, which is how the tests drive it.
-`pnpm check` is green (53 bot tests, 7 shared). Not yet exercised against a real chat: the claim DMs,
+`pnpm check` is green (55 bot tests, 7 shared). Not yet exercised against a real chat: the claim DMs,
 the wizards and the scheduler's DMs.
 
 Not yet done, suggested order (see architecture.md → Roadmap for detail):

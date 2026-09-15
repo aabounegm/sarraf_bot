@@ -254,6 +254,8 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-15 | `/board` is the board in the chat: one offer per screen, one message edited in place             | A card per offer floods the chat and cannot be filtered; the mini app keeps the list view                         |
 | 2026-09-15 | The board's whole state is its callback data (`board:<any\|CUR>:<index>`), the list re-read      | No session or cursor table to keep honest, and an old board message still works — at the cost of a live index     |
 | 2026-09-15 | `[Browse offers]` is plain text and opens that board; the keyboard gained `[Open InnoExchange]`  | Supersedes the 2026-09-14 row: browsing has a chat answer now, and the mini app keeps a one-tap button            |
+| 2026-09-15 | The poster's confirmation reaches the taker as the taker's own claim card, not a sentence        | It is the message that has to carry the handle and `[Mark as done]`; the renderer already did both                |
+| 2026-09-15 | The two sides of a claim are notified independently, and a refused button is dropped, not the DM | A taker was never told they had been confirmed: one message's failure must not cancel the other's                 |
 
 ## 11. Roadmap (suggested order — dependency and value)
 

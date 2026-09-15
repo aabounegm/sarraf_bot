@@ -161,8 +161,8 @@ a confirmed claim, and only `claimCard` shows one.
   and no second truth. `repost` and `checkin` are new `OFFER_BUTTONS`; `keep` was not widened,
   because it means "put the card back", not "yes, still on".
 - **Claim card** (`features/claims/card.ts`): one renderer, two roles. The poster's copy is the
-  request DM kept in sync by `notify.ts`; the taker's is a row of `/mine` with `[Cancel request]` or
-  `[Message X]` `[Mark as done]` `[Release]`. After any claim button, the card that was tapped is
+  request DM kept in sync by `notify.ts`; the taker's is a row of `/mine` — and the DM they get when
+  the poster confirms — with `[Cancel request]` or `[Message X]` `[Mark as done]` `[Release]`. After any claim button, the card that was tapped is
   re-rendered from the tapper's side, so no message in the chat can keep offering an answer that is
   already spent.
 

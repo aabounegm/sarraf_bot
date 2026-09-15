@@ -52,6 +52,7 @@ interface RawPayload {
 
 export function harness(db: Db = openDb(':memory:')) {
   const calls: Call[] = [];
+  const refusals: { method: string; description: string }[] = [];
   let nextId = 500;
 
   /**
@@ -61,8 +62,9 @@ export function harness(db: Db = openDb(':memory:')) {
   const fetch = async (url: string | URL, init?: RequestInit) => {
     const p = JSON.parse(String(init?.body ?? '{}')) as RawPayload;
     const messageId = p.message_id ?? nextId++;
+    const method = String(url).split('/').pop()!;
     calls.push({
-      method: String(url).split('/').pop()!,
+      method,
       chatId: p.chat_id,
       messageId,
       text: p.text,
@@ -70,12 +72,18 @@ export function harness(db: Db = openDb(':memory:')) {
         .flat()
         .map((b) => ({ text: b.text, data: b.callback_data, url: b.url ?? b.web_app?.url })),
     });
+    const headers = { 'content-type': 'application/json' };
+    const refused = refusals.findIndex((r) => r.method === method);
+    if (refused !== -1) {
+      const description = refusals.splice(refused, 1)[0]!.description;
+      return new Response(JSON.stringify({ ok: false, error_code: 400, description }), { headers });
+    }
     return new Response(
       JSON.stringify({
         ok: true,
         result: { message_id: messageId, date: 0, chat: { id: p.chat_id, type: 'private' } },
       }),
-      { headers: { 'content-type': 'application/json' } },
+      { headers },
     );
   };
 
@@ -128,5 +136,9 @@ export function harness(db: Db = openDb(':memory:')) {
       (c) => c.method === 'sendMessage' && (chatId === undefined || c.chatId === chatId),
     );
 
-  return { db, bot, calls, say, tap, sent };
+  /** Makes Telegram refuse the next call to `method`, the way it refuses a button it dislikes. */
+  const refuseNext = (method: string, description: string) =>
+    refusals.push({ method, description });
+
+  return { db, bot, calls, say, tap, sent, refuseNext };
 }

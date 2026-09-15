@@ -57,6 +57,9 @@ export function ClaimRow({ offer, claim }: { offer: OfferDetail; claim: Claim })
       }
     >
       {claim.taker.firstName} · {amount(claim.amount, offer.giveCurrency)}
+      {/* Earned by a confirmed claim (the API reveals it then), and shown as text as well as in
+          the button — the same rule the bot's card follows. */}
+      {claim.status === 'confirmed' && claim.taker.username && ` · @${claim.taker.username}`}
     </Cell>
   );
 }

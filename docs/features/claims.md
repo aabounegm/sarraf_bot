@@ -4,8 +4,10 @@ The handshake: a taker requests part of an offer, the poster confirms or decline
 the deal done. Spec: [spec.md](../spec.md) → Domain model (Claim), Mini app screens 2/3/5, Bot
 handshake notifications, Business rules.
 
-**Status (2026-09-14):** done on all three surfaces, bot chat included, and the 12 h auto-decline
-now runs in the scheduler.
+**Status (2026-09-15):** done on all three surfaces, bot chat included, and the 12 h auto-decline
+runs in the scheduler. The poster's confirmation now reaches the taker as their own claim card
+(handle, `[Mark as done]`, `[Release]`), and a DM can no longer be lost to the other side's failure
+— see § Bot. Not yet verified against a real chat.
 
 ## The same feature on each surface
 
@@ -60,11 +62,36 @@ the buttons that still apply.
 The side that did _not_ act gets a DM, because editing a message is silent; on completion both do.
 `claim-dm-*` in the catalogue, always in the **recipient's** stored locale (`users.locale`). Message
 buttons use `t.me/<username>`, falling back to `tg://user?id=` — a bot may link to a user by id, so
-a missing handle is not a dead end here (the mini app has no such fallback).
+a missing handle is usually not a dead end here (the mini app has no such fallback). A confirmed
+card also prints the handle as text (`contact-handle`), which is copyable and survives a refused
+button.
 
-`claimCard(parties, role, t)` renders the same claim from either side: the poster's request DM, and
-the taker's card under `/mine`. After a button is tapped, the card it sat on is re-rendered from the
-tapper's side unless it is the poster's request DM, which the notifier owns.
+**Someone with no username and forwarding privacy set to "Nobody" cannot be linked to at all** —
+that is the point of the setting, and no Bot API method routes around it. The other side's card
+then carries no contact button; whichever party _can_ be linked to gets messaged first, and the
+deal proceeds from there. If that ever stops being rare, the options are a "set a @username" nudge
+after the first confirmed claim, or relaying messages through the bot.
+
+`claimCard(parties, role, t)` renders the same claim from either side: the poster's request DM, the
+taker's card under `/mine`, **and the DM the taker gets when the poster confirms** — so that
+notification carries the handle and `[Mark as done]` `[Release]`, not just "they confirmed". After a
+button is tapped, the card it sat on is re-rendered from the tapper's side unless it is the poster's
+request DM, which the notifier owns.
+
+Two things a DM must survive, both learned the hard way (a taker who was never told they had been
+confirmed):
+
+- **The two sides are notified independently** (`Promise.allSettled` in `deliver`). A poster's card
+  that cannot be edited used to throw before the taker's DM was ever attempted.
+- **A button Telegram refuses costs that button, not the message.** `tg://user?id=` is rejected for
+  users whose privacy settings forbid linking to them (`BUTTON_USER_PRIVACY_RESTRICTED`) and takes
+  the whole `sendMessage` (or `editMessageText`) with it. Both retry once with
+  `withoutUserLinks(markup)`, which drops the `tg://` button and keeps `[Mark as done]`
+  `[Release]` — the refused shortcut must not cost the buttons the deal runs on.
+
+A DM that is dropped on purpose (blocked bot, deleted account, a chat the user never started) is
+logged as `dm to <id> dropped`. That line is the first place to look when someone says they got
+nothing.
 
 Callback data is `claim:<button>:<id>` (`claimCallback` in `@sarraf/shared`). Every callback is
 answered; one on a claim that has moved on answers "Already closed" and drops the keyboard rather
@@ -81,6 +108,9 @@ handshake, and a taker who blocked the bot is not an error.
 
 A "Message X" button only appears when the other side has a Telegram username: a mini app can open
 `t.me/<username>` but not a `tg://user?id=` link. The bot's own notifications reach those users by id.
+Both cards print the handle as text next to that button once the claim is confirmed — `ClaimCard`
+as its description (`contact-handle`, the bot's own line), `ClaimRow` as `· @handle` after the name,
+because a row has no room for a sentence. That is the half of contact a mini app can always deliver.
 
 ## When a request ends without anyone deciding
 
