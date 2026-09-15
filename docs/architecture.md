@@ -282,6 +282,31 @@ Runbook: [deployment.md](deployment.md). The shape:
 6. **Access & admin** — switch on `MEMBER_CHATS` gating, per-user rate limits, admin remove/ban.
 7. ~~**Deploy**~~ — Dockerfile, compose, webhook mode, runbook: done 2026-09-13 (first real deploy pending).
 
+### Possible future features (no date, no order)
+
+Not scheduled and not promised — written down so they stop being re-invented every few sessions.
+
+- **Activity history per offer, visible to the author only.** Who requested what and when, each
+  confirm/decline/done/expiry, one screen in `/mine` and the offer detail. The transitions already
+  happen in `features/claims/service.ts` and `features/offers/service.ts`; nothing records them, so
+  this starts with an append-only `events` table written by those services, not by their callers.
+- **A note on a request.** `claims.note`, the taker's counterpart to `offers.note`: one optional
+  free-text step at the end of the take wizard / take screen, shown on the poster's request DM and
+  claim card. Same length limit and the same rendering path as the offer note.
+- **`/lang`.** `locale` is written once from Telegram's `language_code` when the user row is created
+  and there is no way to change it — three locales and nobody can pick one. A command (and a row in
+  the Mini App) that writes `users.locale`; everything downstream already reads it.
+- **Post again, from a closed or filled offer.** Not `repost` (that revives the same offer and only
+  `from: ['expired']`): a `[Post again]` on a finished offer opens the create wizard / create screen
+  prefilled from it, so the poster edits amount or rate before publishing and gets a new `#id`. The
+  old offer stays closed and its channel post stays deleted.
+- **Watch a pair.** "DM me when someone posts USD→RUB": with a thin market Browse is usually empty
+  and the only recourse is watching the channel. A `watches` table keyed by (user, give, get) and one
+  DM from `features/offers/notify.ts` when a matching offer goes active.
+- **The going rate while creating.** Under the rate question, the median rate of active offers on the
+  same pair, so the poster stops guessing. One query, no new table; hide the line when there is
+  nothing to average.
+
 ## 12. Questions — resolved 2026-09-12
 
 1. Access: open to everyone at first; `MEMBER_CHATS` gating later.
