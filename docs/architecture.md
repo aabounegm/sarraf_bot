@@ -195,8 +195,8 @@ Runbook: [deployment.md](deployment.md). The shape:
 - `PUBLIC_URL` is the one URL: the "Open InnoExchange" button, the webhook, and (in dev) the tunnel.
 - SQLite on a named volume; backups via `node:sqlite`'s `backup()` (WAL-safe).
 - Names are never literals: bot username comes from `getMe` (`ctx.me` / `bot.botInfo`), the
-  channel from `OFFERS_CHANNEL`, the display name from the locale catalog. The Mini App short name
-  (for `t.me/<bot>/<short>?startapp=` links) becomes an env var when deep links land.
+  channel from `OFFERS_CHANNEL`, the display name from the locale catalog. Mini-app deep links use
+  the bot's **main** Mini App (`t.me/<bot>?startapp=`), so there is no short name to configure.
 
 ## 10. Decisions log
 
@@ -245,6 +245,7 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-14 | Wizard step buttons carry no id and live in `bot/wizard.ts`, not in `packages/shared`            | They last as long as one question, are read three lines from where they are built, and are bot-only                    |
 | 2026-09-15 | `setMyCommands` at boot (private chats, one call per locale); `/help` prints the same list       | Two hand-kept lists of the same five commands would drift; `/start` stays out — the client already offers it           |
 | 2026-09-15 | The chat menu button is the mini app (English label), not the commands list                      | Commands stay on typing `/`; the profile's "Open App" is BotFather-only, not an API call                               |
+| 2026-09-15 | Deep links are the **main** Mini App's (`t.me/<bot>?startapp=`), not a named app's `/<short>/`   | A named app is a separate BotFather object; with only the main one enabled, `/app/` links silently opened the chat     |
 | 2026-09-14 | Tests record Telegram at the `fetch` level (`createBot(config, db, client)`)                     | A conversation builds its own `Api`, so a transformer on `bot.api` never sees what a wizard sends                      |
 | 2026-09-14 | The scheduler is `runDueWork(db, now)` plus a 60 s interval; its jobs go through the services    | The clock is an argument, so tests drive it; the services keep the post, the DMs and the rules in one place            |
 | 2026-09-14 | System actions (`expire`, `repost`, `checkin`, claim `timeout`) act as the poster, off the API   | The scheduler needs an actor and the poster owns the offer; no route may impersonate that                              |

@@ -29,16 +29,24 @@ const input: OfferInput = {
   note: 'Technopark lobby',
 };
 
-type Options = { reply_markup: { inline_keyboard: { text: string }[][] } };
-const labels = (o: Options) => o.reply_markup.inline_keyboard.flat().map((b) => b.text);
+type Options = { reply_markup: { inline_keyboard: { text: string; url?: string }[][] } };
+const buttons = (o: Options) => o.reply_markup.inline_keyboard.flat();
+const labels = (o: Options) => buttons(o).map((b) => b.text);
+const urls = (o: Options) => buttons(o).map((b) => b.url);
 
 /** Records what would go to Telegram; message ids count up from 100. */
 function stubApi() {
-  const calls: { method: string; text?: string; messageId?: number; buttons?: string[] }[] = [];
+  const calls: {
+    method: string;
+    text?: string;
+    messageId?: number;
+    buttons?: string[];
+    urls?: (string | undefined)[];
+  }[] = [];
   let nextId = 100;
   const api = {
     sendMessage: (_chat: string, text: string, options: Options) => {
-      calls.push({ method: 'send', text, buttons: labels(options) });
+      calls.push({ method: 'send', text, buttons: labels(options), urls: urls(options) });
       return Promise.resolve({ message_id: nextId++ });
     },
     editMessageText: (_chat: string, messageId: number, text: string, options: Options) => {
@@ -136,6 +144,14 @@ test('publishes on create, edits in place on change, deletes when closed', async
   );
   assert.equal(messageId(db, offer.id), 100);
   assert.deepEqual(calls[0]?.buttons, ['Take', 'Open InnoExchange']);
+  assert.deepEqual(
+    calls[0]?.urls,
+    [
+      `https://t.me/innoexchange_bot?startapp=take_${offer.id}`,
+      `https://t.me/innoexchange_bot?startapp=offer_${offer.id}`,
+    ],
+    'the take screen and the offer — `?startapp=`, the main Mini App, not the `/<short>` path',
+  );
 
   applyOfferAction(db, alex.id, offer.id, 'pause');
   await flushChannelSync();

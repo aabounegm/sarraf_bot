@@ -21,6 +21,10 @@ expires offers and checks in on the ones with no expiry. The bot's own side is d
 
 Deep links: `startapp=offer_<id>` → `/offers/<id>`, `startapp=take_<id>` → the take screen, and
 `?start=take_<id>` runs the bot's take wizard. Parsing: `parseStartParam` in `@sarraf/shared`.
+The channel post's buttons are `t.me/<bot>?startapp=take_<id>` and `…?startapp=offer_<id>` — the
+**main** Mini App form. `t.me/<bot>/<short>?startapp=` is a different object (a named app from
+`/newapp`); with only the main app configured it opens the chat and drops the parameter, which is
+what made both buttons look identical until 2026-09-15. See [deployment.md](../deployment.md) step 3.
 
 ## API — `apps/bot/src/features/offers/api.ts` (all behind `telegramAuth`)
 

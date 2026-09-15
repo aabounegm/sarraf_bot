@@ -25,11 +25,14 @@ get their own subdomain, container and published port.
    }
    ```
 3. **BotFather** — for the production bot, and make it an admin of the offers channel:
-   - `/newapp`, short name **`app`**, URL `https://innoexchange.bots.abounegm.com` — this is what
-     makes the channel post's `t.me/<bot>/app?startapp=offer_1042` links open the mini app
-     (`miniAppLink` in `packages/shared`; the short name is baked in there).
-   - _Bot Settings → Configure Mini App → Enable_, same URL — the "Open App" button on the bot's
-     profile. There is no Bot API method for either of these two; they are BotFather-only.
+   - _Bot Settings → Configure Mini App → Enable_, URL `https://innoexchange.bots.abounegm.com`.
+     This is the **main** Mini App: it gives the bot's profile its "Open App" button _and_ makes
+     `t.me/<bot>?startapp=offer_1042` open the mini app on that offer (`miniAppLink` in
+     `packages/shared`). Without it Telegram opens the chat and drops the parameter, so the
+     channel post's buttons do nothing. BotFather-only, no API method. Note that a named app
+     (`/newapp`) is a **different object** with a different URL — `t.me/<bot>/<short>?startapp=` —
+     and enabling the main app does not create one; we use the main app because it is the setting
+     the profile button needs anyway.
    - The **Menu Button** needs nothing here: the bot sets it to the mini app on every boot
      (`registerMenu`, [features/bot.md](features/bot.md)), together with the "/" command menu.
    - `/setuserpic` → `docs/brand/bot.png`; the channel's photo (Manage → Edit → set photo) →

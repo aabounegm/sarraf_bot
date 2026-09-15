@@ -176,6 +176,9 @@ export function parseBoardCallback(data: string): { give: Currency | null; index
 export const takeCallback = (offerId: number) => `take:${offerId}`;
 export const TAKE_CALLBACK = /^take:(\d+)$/;
 
-/** Link that opens the mini app on an offer; short name `app` is set in BotFather (docs/deployment.md). */
+/**
+ * Opens the mini app on an offer. Needs the bot's **main** Mini App enabled in BotFather
+ * (docs/deployment.md); without it Telegram just opens the chat and drops the parameter.
+ */
 export const miniAppLink = (bot: string, kind: StartParam['kind'], offerId: number) =>
-  `https://t.me/${bot}/app?startapp=${startParam(kind, offerId)}`;
+  `https://t.me/${bot}?startapp=${startParam(kind, offerId)}`;
