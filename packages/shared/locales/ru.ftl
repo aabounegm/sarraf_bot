@@ -172,10 +172,12 @@ offer-dm-autopaused = Ответа не было, поэтому #{ $id } на �
 ## Bot — menu and commands
 menu-browse = Смотреть предложения
 menu-help = Помощь
-board-hint = Вся доска с фильтрами и вашей историей — в мини-приложении.
+board-position = Предложение { $n } из { $total }
+board-prev = ◀
+board-next = ▶
 command-new = разместить предложение, по одному вопросу за раз
 command-mine = ваши предложения и запросы вместе с кнопками управления
-command-board = открыть мини-приложение
+command-board = посмотреть предложения, которые есть сейчас
 command-help = этот список команд
 command-cancel = прервать текущий шаг
 help =

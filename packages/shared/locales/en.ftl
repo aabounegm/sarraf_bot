@@ -171,10 +171,12 @@ offer-dm-autopaused = No answer, so #{ $id } is paused and its post says so. Res
 ## Bot — menu and commands
 menu-browse = Browse offers
 menu-help = Help
-board-hint = The whole board, with filters and your history, lives in the mini app.
+board-position = Offer { $n } of { $total }
+board-prev = ◀
+board-next = ▶
 command-new = post an offer, one question at a time
 command-mine = your offers and your requests, with the buttons to run them
-command-board = open the mini app
+command-board = browse the offers that are up right now
 command-help = this list of commands
 command-cancel = stop whatever we're in the middle of
 help =

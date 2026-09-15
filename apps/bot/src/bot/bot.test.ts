@@ -48,12 +48,18 @@ test('/start replies in the user language with the menu keyboard', async () => {
   assert.match(payload.text, /Привет, Nour\. InnoExchange \(@innoexchange_bot\)/);
   assert.deepEqual(
     payload.reply_markup.keyboard.flat().map((b) => b.text),
-    ['Смотреть предложения', 'Новое предложение', 'Мои предложения', 'Помощь'],
+    [
+      'Смотреть предложения',
+      'Новое предложение',
+      'Мои предложения',
+      'Помощь',
+      'Открыть InnoExchange',
+    ],
   );
   assert.equal(
-    payload.reply_markup.keyboard[0]?.[0]?.web_app?.url,
+    payload.reply_markup.keyboard.at(-1)?.[0]?.web_app?.url,
     config.PUBLIC_URL,
-    'browsing opens the mini app straight from the keyboard',
+    'the last button is the only one that leaves the chat',
   );
 });
 

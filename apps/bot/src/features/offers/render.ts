@@ -1,6 +1,6 @@
 import { COMMUNITY_TIMEZONE, convert, formatAmount, rateInfo } from '@sarraf/shared';
 
-import type { OfferDetail } from './service.ts';
+import type { OfferSummary } from './service.ts';
 
 /** `ctx.t` in the bot, `i18n.t(locale, …)` where there is no context (the channel post). */
 export type Translate = (key: string, vars?: Record<string, string | number>) => string;
@@ -15,7 +15,7 @@ export const amountText = (minor: number, currency: string) => `${formatAmount(m
  * same text in different languages — the channel renders it in English, the bot in the reader's
  * locale. Kept in sync with docs/spec.md § Channel.
  */
-export function renderOffer(o: OfferDetail, t: Translate): string {
+export function renderOffer(o: OfferSummary, t: Translate): string {
   const lines = [
     `<b>${esc(
       t('channel-title', {
@@ -35,7 +35,7 @@ export function renderOffer(o: OfferDetail, t: Translate): string {
 }
 
 /** "1 USDT = 96.5 RUB ≈ 19,300 RUB" — the rate plus what the whole offer comes to. */
-export function rateLine(o: OfferDetail, t: Translate): string {
+export function rateLine(o: OfferSummary, t: Translate): string {
   const info = rateInfo(o);
   if (info.kind === 'open') return t('rate-open');
   const rate = t(`rate-${info.kind}`, {
@@ -49,7 +49,7 @@ export function rateLine(o: OfferDetail, t: Translate): string {
 
 /** What a taker would pay for `amount`, or "Rate negotiable" when there is no rate. */
 export function totalText(
-  o: Pick<OfferDetail, 'giveCurrency' | 'getCurrency' | 'rate'>,
+  o: Pick<OfferSummary, 'giveCurrency' | 'getCurrency' | 'rate'>,
   amount: number,
   t: Translate,
 ): string {
@@ -67,7 +67,7 @@ const DOTS: Record<string, string> = {
 };
 const statusLine = (key: string, t: Translate) => `${DOTS[key] ?? '●'} ${t(`status-${key}`)}`;
 
-function statusLines(o: OfferDetail, t: Translate): string[] {
+function statusLines(o: OfferSummary, t: Translate): string[] {
   if (o.status !== 'active') return [statusLine(o.status, t)];
   const { remaining, reserved, requested } = o.availability;
   const partial = remaining !== o.giveAmount;
@@ -88,7 +88,7 @@ function statusLines(o: OfferDetail, t: Translate): string[] {
 }
 
 /** A preview in the `/new` wizard has no id yet, so it has no `#1042` either. */
-const footer = (o: OfferDetail, t: Translate) =>
+const footer = (o: OfferSummary, t: Translate) =>
   [
     o.id > 0 && `#${o.id}`,
     `${o.poster.firstName}, ${t('deals', { count: o.poster.deals })}`,

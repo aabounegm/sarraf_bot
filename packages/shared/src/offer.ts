@@ -6,6 +6,7 @@ import {
   type Currency,
   EXPIRY_OPTIONS_HOURS,
   NOTE_MAX_LENGTH,
+  isCurrency,
   rateBase,
 } from './currencies.ts';
 import type { Minor } from './money.ts';
@@ -151,6 +152,25 @@ export function parseOfferCallback(data: string): { button: OfferButton; offerId
   const button = m?.[1] as OfferButton | undefined;
   return button && OFFER_BUTTONS.includes(button) ? { button, offerId: Number(m![2]) } : null;
 }
+
+/**
+ * The chat board (`/board`), e.g. `board:any:0`, `board:USDT:3`: one message paged in place, so the
+ * filter and the position on screen are the whole state. The index is positional over a live list.
+ */
+export const boardCallback = (give: Currency | null, index: number) =>
+  `board:${give ?? 'any'}:${index}`;
+export const BOARD_CALLBACK = /^board:(any|[A-Z]+):(\d+)$/;
+
+export function parseBoardCallback(data: string): { give: Currency | null; index: number } | null {
+  const m = BOARD_CALLBACK.exec(data);
+  const give = m?.[1];
+  if (give === undefined || (give !== 'any' && !isCurrency(give))) return null;
+  return { give: give === 'any' ? null : give, index: Number(m![2]) };
+}
+
+/** `[Take]` on a board card: the in-chat twin of the channel's `?start=take_1042` link. */
+export const takeCallback = (offerId: number) => `take:${offerId}`;
+export const TAKE_CALLBACK = /^take:(\d+)$/;
 
 /** Link that opens the mini app on an offer; short name `app` is set in BotFather (docs/deployment.md). */
 export const miniAppLink = (bot: string, kind: StartParam['kind'], offerId: number) =>

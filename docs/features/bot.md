@@ -1,11 +1,11 @@
 # Feature: bot chat
 
-The chat half of the product: the menu, the `/new` wizard, `/mine`, and the take wizard behind the
-channel's `[Take]` button. Spec: [spec.md](../spec.md) → § B (bot chat).
+The chat half of the product: the menu, the board, the `/new` wizard, `/mine`, and the take wizard
+behind the channel's `[Take]` button. Spec: [spec.md](../spec.md) → § B (bot chat).
 
-**Status (2026-09-14):** done. Everything a user can do in the mini app they can now do in the
-chat. The offer and claim _rules_ live in the services both surfaces call — this slice only asks
-questions and renders cards.
+**Status (2026-09-15):** done. Everything a user can do in the mini app they can now do in the
+chat, browsing included (`/board`, added 2026-09-15). The offer and claim _rules_ live in the
+services both surfaces call — this slice only asks questions and renders cards.
 
 ## Entry points
 
@@ -15,19 +15,23 @@ questions and renders cards.
 | `/start take_<id>`       | `features/claims/bot.ts` → take wizard (the channel's `[Take]`, bot half)                        |
 | `/new`, `[New offer]`    | `features/offers/bot.ts` → offer wizard                                                          |
 | `/mine`, `[My offers]`   | `features/offers/bot.ts` → one card per offer, then your requests                                |
-| `/board`                 | `bot/menu.ts` — a message with an inline `web_app` button                                        |
+| `/board`                 | `features/offers/board.ts` — the board in the chat, one offer per tap                            |
 | `/help`, `[Help]`        | `bot/menu.ts`                                                                                    |
 | `/cancel`                | `bot/menu.ts` — `conversation.exitAll()`                                                         |
-| `[Browse offers]`        | a `web_app` keyboard button: opens the mini app with no message in between                       |
+| `[Browse offers]`        | `features/offers/board.ts` — the same board `/board` opens                                       |
+| `[Open InnoExchange]`    | a `web_app` keyboard button: opens the mini app with no message in between                       |
+| `[Take]` on a board card | `features/claims/bot.ts` (`take:<id>`) → the same take wizard as the deep link                   |
 | Buttons on claim cards   | `features/claims/bot.ts` (`claim:<button>:<id>`)                                                 |
 | Buttons on `/mine` cards | `features/offers/bot.ts` (`offer:<button>:<id>`)                                                 |
 | Scheduler DMs            | `features/offers/notify.ts` sends them; their buttons are the same `offer:<button>:<id>` handler |
 
-The reply keyboard is `[Browse offers] [New offer] / [My offers] [Help]`, built once in
-`menuKeyboard`. Its three text buttons are matched by `hears('<message-id>')` from `@grammyjs/i18n`,
-so they work in every locale. **Deviation from the spec:** `/start` sends _one_ message. A message
-carries either a reply keyboard or an inline keyboard, not both, and the keyboard's first button
-already opens the mini app, so the separate inline "Open InnoExchange" button lives in `/board`.
+The reply keyboard is `[Browse offers] [New offer] / [My offers] [Help] / [Open InnoExchange]`,
+built once in `menuKeyboard`. Its four text buttons are matched by `hears('<message-id>')` from
+`@grammyjs/i18n`, so they work in every locale; the fifth is a `web_app` button and sends no
+message, which is why `MENU_KEYS` (what a wizard hands back rather than reading as an answer) is
+only the four. **Deviation from the spec:** `/start` sends _one_ message. A message carries either
+a reply keyboard or an inline keyboard, not both, so the spec's separate inline "Open InnoExchange"
+button is the keyboard's last row instead.
 
 What Telegram shows before the user types anything is registered at boot by `registerMenu`
 (`bot/menu.ts`), called from `main.ts` after `bot.init()` and fire and forget — a rejection is
@@ -39,7 +43,7 @@ logged, and both of its halves are shortcuts to something the chat already offer
   keyboard is the way back to the menu.
 - **The button next to the message input** — `setChatMenuButton` with a `web_app` button that opens
   the mini app. It _replaces_ the commands button that would otherwise sit there; typing `/` still
-  completes the commands, and the reply keyboard still has `[Browse offers]`. There is one default
+  completes the commands, and the reply keyboard has `[Open InnoExchange]`. There is one default
   button and no `language_code` on that method, so its label is English for everyone, like the
   channel post. Per-chat calls in `/start` would localise it, at one API call per `/start`.
 
@@ -53,6 +57,35 @@ constants the handlers themselves register with (`/new` and `/mine` are handled 
 catalogue. `/help` interpolates the rendered lines as `{ $commands }`, so the two cannot drift, and
 a command is renamed in one constant plus its description in three locales. `bot/menu.test.ts`
 walks `COMMANDS` and fails if one of them has no description or no handler that answers.
+
+## The board — `features/offers/board.ts`
+
+`/board` used to be a link to the mini app, which the reply keyboard and the menu button already
+were. It is now the board itself: **one active offer per screen, in one message**, edited in place
+as you page or filter, so browsing costs the chat a single message no matter how long you browse.
+
+```
+Offer 3 of 12
+<the channel post's own renderer, in the reader's locale>
+         [ ◀ ]  [ Take ]  [ ▶ ]
+ [✓ Anything] [USDT] [USD] [EUR]
+ [AED] [RUB] [EGP]
+        [ Open InnoExchange ]
+```
+
+- The whole state is the callback data — `board:<any|CUR>:<index>` (`boardCallback` in
+  `@sarraf/shared`). No session, no cursor table, and a board message left in the chat overnight
+  still works.
+- The list is re-read on every tap (`listOffers`, `active` only, newest first), so nothing on
+  screen can be an offer that has since gone. Paging wraps; an index from a list that has shrunk
+  is clamped to the last offer. **Known ceiling:** the position is an index into a live list, so an
+  offer closing mid-browse shifts what the next tap lands on. A `createdAt` cursor is the upgrade.
+- `[Take]` carries `take:<id>` and enters the take wizard — the same conversation
+  `?start=take_<id>` enters, so there is one take flow in the chat, not two. It is hidden on your
+  own offer and when nothing is remaining, the two cases the mini app hides it in; the service
+  refuses either way.
+- The chips are the mini app's "I'm looking for", ticked like every other choice the bot offers
+  (`✓ USDT`). `board-prev` / `board-next` are catalogue entries, so Arabic flips the arrows.
 
 ## The wizards — `bot/wizard.ts` plus one file per flow
 
@@ -160,5 +193,7 @@ plus `say`, `tap(label)` and `sent`. `features/offers/bot.test.ts` walks the who
 checks the offer it wrote, the edit flow, `/mine`'s buttons acting on the right offer, a claim
 button tapped mid-wizard, and someone else's card refusing to answer;
 `features/claims/bot.test.ts` covers the handshake buttons and the `take_<id>` deep link;
+`features/offers/board.test.ts` pages the board, filters it, takes from it and checks your own
+offer has no `[Take]`;
 `bot/menu.test.ts` walks `COMMANDS` and checks each one has a description and a handler that
 answers.

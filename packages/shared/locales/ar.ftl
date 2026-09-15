@@ -174,10 +174,13 @@ offer-dm-autopaused = لم يصل رد، لذا #{ $id } موقوف مؤقتاً
 ## Bot — menu and commands
 menu-browse = تصفّح العروض
 menu-help = مساعدة
-board-hint = اللوحة كاملة، بالفلاتر وسجلّك، في التطبيق المصغّر.
+board-position = العرض { $n } من أصل { $total }
+# Flipped on purpose: in an RTL layout the previous offer is to the right.
+board-prev = ▶
+board-next = ◀
 command-new = انشر عرضاً، سؤالاً واحداً في كل مرة
 command-mine = عروضك وطلباتك مع أزرار إدارتها
-command-board = افتح التطبيق المصغّر
+command-board = تصفّح العروض المتاحة الآن
 command-help = قائمة الأوامر هذه
 command-cancel = أوقف ما نحن بصدده
 help =

@@ -1,5 +1,5 @@
 import { hears } from '@grammyjs/i18n';
-import { type Api, Composer, InlineKeyboard, Keyboard } from 'grammy';
+import { type Api, Composer, Keyboard } from 'grammy';
 import type { LanguageCode } from 'grammy/types';
 
 import type { Config } from '../config.ts';
@@ -7,8 +7,8 @@ import { i18n } from './i18n.ts';
 import type { BotContext } from './index.ts';
 
 /**
- * The four buttons from spec § B. "Browse offers" is a `web_app` button, so it opens the mini app
- * in one tap; the other three are plain text, matched with `hears` in the slice that owns them.
+ * The four text buttons from spec § B, matched with `hears` in the slice that owns each. The
+ * keyboard's fifth button opens the mini app and sends no message, so it is not one of these.
  */
 const MENU_KEYS = ['menu-browse', 'new-offer', 'nav-my-offers', 'menu-help'] as const;
 
@@ -19,7 +19,7 @@ const MENU_KEYS = ['menu-browse', 'new-offer', 'nav-my-offers', 'menu-help'] as 
  */
 export const NEW_COMMAND = 'new';
 export const MINE_COMMAND = 'mine';
-const BOARD_COMMAND = 'board';
+export const BOARD_COMMAND = 'board';
 const HELP_COMMAND = 'help';
 /** The one command that already says "cancelled" itself, so a wizard leaving on it stays quiet. */
 export const CANCEL_COMMAND = 'cancel';
@@ -67,11 +67,13 @@ export function registerMenu(api: Api, url: string) {
 
 export const menuKeyboard = (ctx: BotContext, url: string) =>
   new Keyboard()
-    .webApp(ctx.t('menu-browse'), url)
+    .text(ctx.t('menu-browse'))
     .text(ctx.t('new-offer'))
     .row()
     .text(ctx.t('nav-my-offers'))
     .text(ctx.t('menu-help'))
+    .row()
+    .webApp(ctx.t('open-app'), url)
     .resized()
     .persistent();
 
@@ -105,12 +107,6 @@ export function menuBot(config: Config) {
     );
   menu.command(HELP_COMMAND, help);
   menu.filter(hears('menu-help'), help);
-
-  menu.command(BOARD_COMMAND, (ctx) =>
-    ctx.reply(ctx.t('board-hint'), {
-      reply_markup: new InlineKeyboard().webApp(ctx.t('open-app'), config.PUBLIC_URL),
-    }),
-  );
 
   menu.command(CANCEL_COMMAND, async (ctx) => {
     await ctx.conversation.exitAll();

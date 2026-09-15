@@ -1,4 +1,4 @@
-import { CLAIM_CALLBACK, parseClaimCallback, parseStartParam } from '@sarraf/shared';
+import { CLAIM_CALLBACK, TAKE_CALLBACK, parseClaimCallback, parseStartParam } from '@sarraf/shared';
 import { Composer } from 'grammy';
 
 import type { BotContext } from '../../bot/index.ts';
@@ -40,6 +40,16 @@ export function claimsBot(db: Db) {
       await ctx.editMessageReplyMarkup().catch(() => undefined);
       return;
     }
+  });
+
+  // [Take] on a `/board` card — the same wizard the channel's link enters, one tap earlier.
+  claims.callbackQuery(TAKE_CALLBACK, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    await enterWizard(
+      ctx,
+      TAKE_WIZARD,
+      Number(TAKE_CALLBACK.exec(ctx.callbackQuery.data ?? '')![1]),
+    );
   });
 
   // The channel's [Take] button, bot half: `t.me/<bot>?start=take_1042`.

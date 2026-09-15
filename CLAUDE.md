@@ -47,12 +47,12 @@ apps/bot/src/         one Node process: bot + API + DB
   config.ts             zod-validated env (see .env.example)
   db/                   schema.ts, index.ts (openDb); migrations in apps/bot/drizzle/
   bot/                  createBot(): plugins (session in SQLite, i18n, conversations), BotContext; i18n.ts = the shared Fluent instance
-  bot/menu.ts           the reply keyboard and /start /help /board /cancel; bot/wizard.ts = the question steps both wizards use
+  bot/menu.ts           the reply keyboard and /start /help /cancel; bot/wizard.ts = the question steps both wizards use
   bot/testing.ts        harness for *.test.ts: records Telegram calls, say()/tap() drive real updates
   http/                 createHttp(): Hono app: /api routes + serves apps/webapp/dist (SPA fallback); auth.ts = initData verification
   lib/app-error.ts      AppError(status, code): thrown by services, mapped by http/index.ts onError and by errorText() in the bot
   lib/telegram-queue.ts serialised fire-and-forget sends + 429 retry, shared by channel.ts and notify.ts
-  features/offers/      service.ts (rules) · api.ts · bot.ts (/new /mine) · wizard.ts · render.ts · channel.ts · notify.ts (the scheduler's DMs) · *.test.ts — the pattern for every feature
+  features/offers/      service.ts (rules) · api.ts · bot.ts (/new /mine) · board.ts (/board) · wizard.ts · render.ts · channel.ts · notify.ts (the scheduler's DMs) · *.test.ts — the pattern for every feature
   features/claims/      the take → confirm → done handshake: service.ts · api.ts · bot.ts (buttons) · card.ts · wizard.ts (take) · notify.ts (DMs)
 
 apps/webapp/src/      Feature-Sliced Design: app/ pages/ widgets/ features/ entities/ shared/
@@ -128,8 +128,10 @@ with `[Confirm]` `[Decline]`, re-rendered on every transition, stale buttons ans
 "Your requests"; contact gating; every mutation re-renders the channel post (verified against a real
 channel). In the chat: the reply keyboard, Telegram's "/" menu and the mini-app button next to the
 input (both set at boot by `registerMenu`; the menu is the same list `/help` prints), the `/new` and `[Edit]` wizards, `/mine` cards with their
-buttons, `/board`, `/help`, `/cancel`, and the take wizard from `?start=take_<id>`, all calling the
-same services as the API. Dev-in-browser works end to end — `?user=2` in the URL gives a second
+buttons, `/help`, `/cancel`, and the take wizard from `?start=take_<id>` or a board card's `[Take]`,
+all calling the same services as the API. **`/board` is now the board in the chat (2026-09-15):**
+one active offer per screen in one message, paged and filtered in place, the whole state in the
+callback data (`features/offers/board.ts`). Dev-in-browser works end to end — `?user=2` in the URL gives a second
 identity, which is how the handshake is tested from one machine.
 
 Nothing goes stale on its own any more: `scheduler.ts` ticks every 60s and asks the database what is
@@ -137,7 +139,7 @@ due — expire the offer (post deleted, poster gets `[Repost]`), time out a 12h-
 (taker told), ping the poster of a no-expiry offer every 48h (`[Yes, still on]` `[Pause]` `[Close]`) and
 pause it 24h later if nobody answers. Every job calls the same services the buttons do, so there is
 one code path per outcome; the due-work is `runDueWork(db, now)`, which is how the tests drive it.
-`pnpm check` is green (47 bot tests, 7 shared). Not yet exercised against a real chat: the claim DMs,
+`pnpm check` is green (53 bot tests, 7 shared). Not yet exercised against a real chat: the claim DMs,
 the wizards and the scheduler's DMs.
 
 Not yet done, suggested order (see architecture.md → Roadmap for detail):

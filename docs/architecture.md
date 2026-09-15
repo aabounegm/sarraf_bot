@@ -251,6 +251,9 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-14 | `[Repost]` revives the same offer with a fresh 24 h expiry rather than copying it to a new id    | Owner: the id is public and the claim history is real — only the post was deleted. The old duration is not stored |
 | 2026-09-14 | One nullable `offers.checkInAt` ("asked, waiting"); `updatedAt` is "last heard from the poster"  | Owner: one column, one migration. Every poster action clears it and so bumps `updatedAt`, restarting the 48 h     |
 | 2026-09-14 | Closing or expiring an offer declines its pending claims through `applyClaimAction`              | The bulk `UPDATE` it replaces left those takers waiting for an answer that had already been given                 |
+| 2026-09-15 | `/board` is the board in the chat: one offer per screen, one message edited in place             | A card per offer floods the chat and cannot be filtered; the mini app keeps the list view                         |
+| 2026-09-15 | The board's whole state is its callback data (`board:<any\|CUR>:<index>`), the list re-read      | No session or cursor table to keep honest, and an old board message still works — at the cost of a live index     |
+| 2026-09-15 | `[Browse offers]` is plain text and opens that board; the keyboard gained `[Open InnoExchange]`  | Supersedes the 2026-09-14 row: browsing has a chat answer now, and the mini app keeps a one-tap button            |
 
 ## 11. Roadmap (suggested order — dependency and value)
 
