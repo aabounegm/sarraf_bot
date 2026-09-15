@@ -123,12 +123,17 @@ knows which database it talks to.
 
 - `main.ts`: load config → open DB and apply migrations → build bot → build HTTP app → `getMe` and
   wire the channel queue → listen → poll (or register the webhook).
-- **Scheduler (to implement):** a `setInterval` (≈60 s) in the same process runs idempotent
-  "due" queries: expire offers (`expiresAt <= now`), ping posters of no-expiry offers every 48 h
-  and auto-pause after 24 h of silence, auto-decline pending requests older than 12 h and notify
-  the taker. **No in-memory timers**: every tick asks the DB what is due, so a restart or deploy
-  loses nothing — whatever became due while the process was down runs on the first tick.
-  Deliberate ceiling: one process, one interval; a job queue only if we ever run more than one instance.
+- **Scheduler** (`scheduler.ts`, done 2026-09-14): `runDueWork(db, now)` is a plain function of the
+  database and a clock — expire offers (`expiresAt <= now`), auto-decline pending requests older
+  than 12 h, auto-pause a no-expiry offer 24 h after an unanswered check-in, and ping the poster of
+  one every 48 h. `startScheduler(db)` (wired in `main.ts`, like the channel queue) runs it once at
+  boot and then every 60 s with `Date.now()`; tests call it directly with a time of their choosing,
+  so nothing waits on a timer. **No in-memory timers and no in-memory state**: every tick asks the
+  DB what is due and every job's own effect takes the row out of its own query, so a restart or a
+  deploy loses nothing and repeats nothing. The jobs never write offers or claims themselves —
+  they call `applyOfferAction` / `applyClaimAction` in the poster's name, which is what makes the
+  channel post and the DMs identical to a human tap. Deliberate ceiling: one process, one interval;
+  a job queue only if we ever run more than one instance.
 - **Channel sync** (`features/offers/channel.ts`): `renderOffer(offer)` is a pure function of DB
   state; `queueChannelSync(offerId)` runs at the end of every offer mutation and edits the post in
   place, or deletes it on complete / close / expire. No bumping (delete + resend) for now — add it
@@ -239,6 +244,11 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-14 | [Close] in the chat asks before it closes (`offer:close` → `closenow` / `keep`)                  | Closing deletes the post and declines pending requests; the mini app confirms too                                 |
 | 2026-09-14 | Wizard step buttons carry no id and live in `bot/wizard.ts`, not in `packages/shared`            | They last as long as one question, are read three lines from where they are built, and are bot-only               |
 | 2026-09-14 | Tests record Telegram at the `fetch` level (`createBot(config, db, client)`)                     | A conversation builds its own `Api`, so a transformer on `bot.api` never sees what a wizard sends                 |
+| 2026-09-14 | The scheduler is `runDueWork(db, now)` plus a 60 s interval; its jobs go through the services    | The clock is an argument, so tests drive it; the services keep the post, the DMs and the rules in one place       |
+| 2026-09-14 | System actions (`expire`, `repost`, `checkin`, claim `timeout`) act as the poster, off the API   | The scheduler needs an actor and the poster owns the offer; no route may impersonate that                         |
+| 2026-09-14 | [Repost] revives the same offer with a fresh 24 h expiry rather than copying it to a new id      | Owner: the id is public and the claim history is real — only the post was deleted. The old duration is not stored |
+| 2026-09-14 | One nullable `offers.checkInAt` ("asked, waiting"); `updatedAt` is "last heard from the poster"  | Owner: one column, one migration. Every poster action clears it and so bumps `updatedAt`, restarting the 48 h     |
+| 2026-09-14 | Closing or expiring an offer declines its pending claims through `applyClaimAction`              | The bulk `UPDATE` it replaces left those takers waiting for an answer that had already been given                 |
 
 ## 11. Roadmap (suggested order — dependency and value)
 
@@ -254,7 +264,10 @@ Runbook: [deployment.md](deployment.md). The shape:
    offer and request cards, `/board`, `/help`, `/cancel`, and the take wizard from
    `?start=take_<id>`, all on the same services as the Mini App. See
    [features/bot.md](features/bot.md).
-5. **Scheduler** — expiry, 48 h check-ins for no-expiry offers, auto-pause, 12 h pending auto-decline.
+5. ~~**Scheduler**~~ — done 2026-09-14 (`scheduler.ts`, `features/offers/notify.ts`): expiry with a
+   one-tap [Repost], 48 h check-ins on no-expiry offers, auto-pause after 24 h of silence, 12 h
+   pending auto-decline, and closing an offer now tells the takers it declined. See §6 and
+   [features/offers.md](features/offers.md) § Scheduler.
 6. **Access & admin** — switch on `MEMBER_CHATS` gating, per-user rate limits, admin remove/ban.
 7. ~~**Deploy**~~ — Dockerfile, compose, webhook mode, runbook: done 2026-09-13 (first real deploy pending).
 

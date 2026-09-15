@@ -4,8 +4,8 @@ The handshake: a taker requests part of an offer, the poster confirms or decline
 the deal done. Spec: [spec.md](../spec.md) → Domain model (Claim), Mini app screens 2/3/5, Bot
 handshake notifications, Business rules.
 
-**Status (2026-09-14):** done on all three surfaces, bot chat included. What is left belongs to the
-scheduler phase: the 12 h auto-decline.
+**Status (2026-09-14):** done on all three surfaces, bot chat included, and the 12 h auto-decline
+now runs in the scheduler.
 
 ## The same feature on each surface
 
@@ -40,6 +40,10 @@ availability the other screens show. The mini app writes it straight into the de
   stale buttons rely on this being idempotent-by-error).
 - Release means the same from either side, but is recorded honestly: the poster's release is a
   `declined`, the taker's is a `cancelled`.
+- `timeout` is a sixth action, the scheduler's: a `pending` claim becomes `declined` in the poster's
+  name, but the taker reads `claim-dm-timeout` ("no answer") and the poster's card says
+  `claim-line-timeout`, because nobody actually declined anything. It is not on the API's action
+  list — no surface but the scheduler may claim someone did not answer.
 - Done is two-sided: the first tap sets `takerDone`/`posterDone`, the second flips the claim to
   `done`. When `filled === giveAmount` the offer becomes `completed` and its post is deleted.
 - Contact gating: handles are exchanged **only** between the two sides of a confirmed claim
@@ -78,9 +82,13 @@ handshake, and a taker who blocked the bot is not an error.
 A "Message X" button only appears when the other side has a Telegram username: a mini app can open
 `t.me/<username>` but not a `tg://user?id=` link. The bot's own notifications reach those users by id.
 
-## Hook points for later phases
+## When a request ends without anyone deciding
 
-- Scheduler: pending claims older than 12 h are auto-declined (`applyClaimAction(..., 'decline')`
-  with the poster as the actor) and the taker notified.
-- Offer close already declines pending claims (`offers/service.ts`) but bypasses `applyClaimAction`,
-  so those takers are not notified yet — route it through the service, or emit the events there.
+Two paths, both `applyClaimAction` with the poster as the actor, so the channel post, the poster's
+request DM and the taker's DM all happen exactly as they do for a tap:
+
+- **12 h of silence** — `apps/bot/src/scheduler.ts` finds `pending` claims older than 12 h and
+  applies `timeout` (decisions log 2026-09-12). Idempotent because the claim leaves `pending`.
+- **The offer ends** — `applyOfferAction(…, 'close' | 'expire')` collects the offer's pending claims
+  and applies `decline` (a close is the poster's decision) or `timeout` (an expiry is nobody's).
+  Confirmed reservations survive both. This is what used to be one bulk `UPDATE` that told no one.

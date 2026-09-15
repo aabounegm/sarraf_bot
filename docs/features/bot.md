@@ -9,18 +9,19 @@ questions and renders cards.
 
 ## Entry points
 
-| What                     | Where                                                                      |
-| ------------------------ | -------------------------------------------------------------------------- |
-| `/start`                 | `bot/menu.ts` — welcome + the persistent reply keyboard                    |
-| `/start take_<id>`       | `features/claims/bot.ts` → take wizard (the channel's [Take], bot half)    |
-| `/new`, [New offer]      | `features/offers/bot.ts` → offer wizard                                    |
-| `/mine`, [My offers]     | `features/offers/bot.ts` → one card per offer, then your requests          |
-| `/board`                 | `bot/menu.ts` — a message with an inline `web_app` button                  |
-| `/help`, [Help]          | `bot/menu.ts`                                                              |
-| `/cancel`                | `bot/menu.ts` — `conversation.exitAll()`                                   |
-| [Browse offers]          | a `web_app` keyboard button: opens the mini app with no message in between |
-| Buttons on claim cards   | `features/claims/bot.ts` (`claim:<button>:<id>`)                           |
-| Buttons on `/mine` cards | `features/offers/bot.ts` (`offer:<button>:<id>`)                           |
+| What                     | Where                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| `/start`                 | `bot/menu.ts` — welcome + the persistent reply keyboard                                          |
+| `/start take_<id>`       | `features/claims/bot.ts` → take wizard (the channel's [Take], bot half)                          |
+| `/new`, [New offer]      | `features/offers/bot.ts` → offer wizard                                                          |
+| `/mine`, [My offers]     | `features/offers/bot.ts` → one card per offer, then your requests                                |
+| `/board`                 | `bot/menu.ts` — a message with an inline `web_app` button                                        |
+| `/help`, [Help]          | `bot/menu.ts`                                                                                    |
+| `/cancel`                | `bot/menu.ts` — `conversation.exitAll()`                                                         |
+| [Browse offers]          | a `web_app` keyboard button: opens the mini app with no message in between                       |
+| Buttons on claim cards   | `features/claims/bot.ts` (`claim:<button>:<id>`)                                                 |
+| Buttons on `/mine` cards | `features/offers/bot.ts` (`offer:<button>:<id>`)                                                 |
+| Scheduler DMs            | `features/offers/notify.ts` sends them; their buttons are the same `offer:<button>:<id>` handler |
 
 The reply keyboard is `[Browse offers] [New offer] / [My offers] [Help]`, built once in
 `menuKeyboard`. Its three text buttons are matched by `hears('<message-id>')` from `@grammyjs/i18n`,
@@ -96,6 +97,11 @@ a confirmed claim, and only `claimCard` shows one.
   what you can still act on.
   [Close] asks first (an alert plus a [Close] [Cancel] row) because closing deletes the post and
   declines pending requests.
+- **Scheduler DMs** ([offers.md](offers.md) § Scheduler): "expired" with [Repost], "still on?" with
+  [Yes, still on] [Pause] [Close], "paused" with [Resume]. They carry `offer:` callbacks, so the
+  `/mine` handler answers them and re-renders the DM as the offer card — no second set of buttons
+  and no second truth. `repost` and `checkin` are new `OFFER_BUTTONS`; `keep` was not widened,
+  because it means "put the card back", not "yes, still on".
 - **Claim card** (`features/claims/card.ts`): one renderer, two roles. The poster's copy is the
   request DM kept in sync by `notify.ts`; the taker's is a row of `/mine` with [Cancel request] or
   [Message X] [Mark as done] [Release]. After any claim button, the card that was tapped is

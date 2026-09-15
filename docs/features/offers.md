@@ -3,19 +3,21 @@
 Posting, browsing, editing, pausing/resuming and closing swap offers.
 Spec: [spec.md](../spec.md) → Domain model, Mini app screens 1/2/4/5, Business rules.
 
-**Status (2026-09-14):** API, mini app, channel post and the bot chat all done; the expiry job
-belongs to the scheduler phase. The bot's own side is described in [bot.md](bot.md).
+**Status (2026-09-14):** done — API, mini app, channel post, the bot chat, and the scheduler that
+expires offers and checks in on the ones with no expiry. The bot's own side is described in
+[bot.md](bot.md).
 
 ## The same feature on each surface
 
-| Action                 | Mini app                                                                                                        | Bot chat                                        | Channel                                 |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | --------------------------------------- |
-| Browse                 | `/` `BrowsePage` — chips filter by give currency; only `active` offers (paused/finished ones live in My offers) | `/board`, [Browse offers] → the mini app        | —                                       |
-| Detail                 | `/offers/$offerId` `OfferPage` — header, progress (filled grey / reserved amber), details, note, other takers   | —                                               | one post per offer, `channel.ts`        |
-| Create                 | `/offers/new` `OfferForm`                                                                                       | `/new` step-by-step wizard, [New offer]         | post published on create                |
-| Edit                   | `/offers/$offerId/edit`                                                                                         | [Edit] on a `/mine` card: the wizard, prefilled | post edited in place                    |
-| Pause / Resume / Close | `OfferActions` on detail (own offers) and on My offers                                                          | buttons on a `/mine` card ([Close] asks first)  | "● Paused" line / post deleted on close |
-| My offers              | `/my` `MyOffersPage` (Your requests section arrives with claims)                                                | `/mine`, [My offers] — a card per offer         | —                                       |
+| Action                 | Mini app                                                                                                        | Bot chat                                                             | Channel                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Browse                 | `/` `BrowsePage` — chips filter by give currency; only `active` offers (paused/finished ones live in My offers) | `/board`, [Browse offers] → the mini app                             | —                                                               |
+| Detail                 | `/offers/$offerId` `OfferPage` — header, progress (filled grey / reserved amber), details, note, other takers   | —                                                                    | one post per offer, `channel.ts`                                |
+| Create                 | `/offers/new` `OfferForm`                                                                                       | `/new` step-by-step wizard, [New offer]                              | post published on create                                        |
+| Edit                   | `/offers/$offerId/edit`                                                                                         | [Edit] on a `/mine` card: the wizard, prefilled                      | post edited in place                                            |
+| Pause / Resume / Close | `OfferActions` on detail (own offers) and on My offers                                                          | buttons on a `/mine` card ([Close] asks first)                       | "● Paused" line / post deleted on close                         |
+| My offers              | `/my` `MyOffersPage` (Your requests section arrives with claims)                                                | `/mine`, [My offers] — a card per offer                              | —                                                               |
+| Expire / check in      | nothing to do: the board only ever lists `active` offers                                                        | the scheduler's DMs, with [Repost] / [Yes, still on] [Pause] [Close] | post deleted on expiry, "● Paused" after an unanswered check-in |
 
 Deep links: `startapp=offer_<id>` → `/offers/<id>`, `startapp=take_<id>` → the take screen, and
 `?start=take_<id>` runs the bot's take wizard. Parsing: `parseStartParam` in `@sarraf/shared`.
@@ -42,17 +44,51 @@ codes to `error-*` strings. Amounts in requests and responses are integer minor 
   its questions.
 - `rate = null` forces `negotiable = true`.
 - Edit: new amount ≥ filled + reserved; not allowed once closed/completed/expired.
-- Transitions: pause (active→paused), resume (paused→active), close (active|paused→closed).
-  Close declines _pending_ claims; _confirmed_ ones survive (the deal may still happen).
-- Expiry is recomputed from "now" on create and on edit.
+- Transitions: pause (active→paused), resume (paused→active), close (active|paused→closed),
+  and three the scheduler and its DMs use, all in the poster's name and none of them on the API's
+  action list: expire (active|paused→expired), repost (expired→active, with a fresh 24h expiry),
+  checkin (active→active, "yes, still on").
+- Close and expire decline _pending_ claims **through `applyClaimAction`** (`decline` for a close,
+  `timeout` for an expiry), so every taker is told; _confirmed_ ones survive (the deal may still
+  happen). See [claims.md](claims.md).
+- Every action, and every edit, clears `offers.checkInAt` — the poster has just proved they are
+  here, which is what the 48h check-in wanted to know.
+- Expiry is recomputed from "now" on create, on edit and on repost.
 - `poster.deals` = count of `done` claims where the user was poster or taker (`dealsByUser`).
 - `ensureUser` upserts the poster's Telegram profile on create.
 
-## Hook points for later phases
+## Scheduler — `apps/bot/src/scheduler.ts`, DMs in `notify.ts`
 
-- Claims: `close` must notify takers of declined pending requests (see docs/features/claims.md).
-- Scheduler: expire offers with `expiresAt <= now` → status `expired` (hidden from the board), then
-  `queueChannelSync` deletes the post.
+`runDueWork(db, now)` is a plain function of the database and a clock; `startScheduler(db)` runs it
+at boot and every 60s with `Date.now()` (wired in `main.ts`, so importing either module starts
+nothing, and tests call `runDueWork` with whatever time they want to be). Two of its four jobs are
+this feature's — the other two are in [claims.md](claims.md):
+
+| Job        | Due when                                                                 | Does                                                                                                                   |
+| ---------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Expire     | `status ∈ (active, paused)` and `expiresAt <= now`                       | `applyOfferAction(…, 'expire')` → post deleted, pending claims timed out, poster gets `offer-dm-expired` with [Repost] |
+| Check in   | `status = active`, no expiry, `checkInAt IS NULL`, `updatedAt` ≥ 48h old | writes `checkInAt = now`, then `offer-dm-checkin` with [Yes, still on] [Pause] [Close]                                 |
+| Auto-pause | `status = active` and `checkInAt` ≥ 24h old                              | `applyOfferAction(…, 'pause')` → the post says "● Paused", poster gets `offer-dm-autopaused` with [Resume]             |
+
+**`offers.checkInAt`** (nullable, the feature's one migration) means "asked, still waiting". Null is
+the resting state; `updatedAt` is then the "when did we last hear from them" the 48h counts from,
+because every poster action clears `checkInAt` and thereby bumps `updatedAt`. [Yes, still on] is the
+`checkin` action, which is exactly that clearing and nothing else.
+
+**Idempotency** is the database's, never memory: each job's own effect takes the row out of its own
+query (expired is not `active`/`paused`; a set `checkInAt` is not `NULL`; a paused offer is not
+`active`). A second tick, or a restart mid-tick, finds nothing to redo. The check-in writes
+`checkInAt` _before_ queueing its DM, so the cost of a crash in between is one silent auto-pause
+rather than a ping on every tick.
+
+Known ceiling: the channel sync writes `channelMessageId` on the same row, so publishing (or
+republishing) an offer postpones its next check-in by up to 48h. That only happens right after a
+poster action, which would have reset the clock anyway.
+
+`notify.ts` is the claims notifier's shape for offers: `startOfferNotifications({ api, db })` at
+boot, a fire-and-forget queue, and the poster's stored `users.locale` because there is no `ctx`. Its
+button labels are message ids named after the buttons (`repost`, `checkin`, `pause`, `close`,
+`resume`), so a DM is one line of text and a list of `offerCallback` buttons.
 
 ## Channel — `apps/bot/src/features/offers/channel.ts`
 
