@@ -32,6 +32,10 @@ get their own subdomain, container and published port.
      profile. There is no Bot API method for either of these two; they are BotFather-only.
    - The **Menu Button** needs nothing here: the bot sets it to the mini app on every boot
      (`registerMenu`, [features/bot.md](features/bot.md)), together with the "/" command menu.
+   - `/setuserpic` → `docs/brand/bot.png`; the channel's photo (Manage → Edit → set photo) →
+     `docs/brand/channel.png`. Two chat bubbles holding `$` and `₽`, blue for the bot and amber for
+     the channel, laid out to survive Telegram's circular crop. The `.svg` beside each PNG is the
+     source; re-render with `chrome --headless --screenshot=bot.png --window-size=512,512 bot.svg`.
 4. **Server checkout** — `git clone … && cd sarraf_bot`, then create `apps/bot/.env`:
    ```
    BOT_TOKEN=…

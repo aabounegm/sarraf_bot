@@ -1,3 +1,5 @@
+<img src="docs/brand/bot.png" alt="" width="104" align="right" />
+
 # sarraf_bot — InnoExchange
 
 Telegram bot + Mini App for peer-to-peer currency swaps inside a trusted community
@@ -58,7 +60,7 @@ only) signs initData for a fake user, so API calls succeed.
 apps/bot/          grammY bot + Hono API + Drizzle (one Node process). Vertical feature slices.
 apps/webapp/       Telegram Mini App (Vite + React + TelegramUI). Feature-Sliced Design.
 packages/shared/   Isomorphic only: domain config, money math, types, Fluent locales.
-docs/              architecture.md, spec.md, screenshots/, features/ (one file per feature)
+docs/              architecture.md, spec.md, screenshots/, features/ (one per feature), brand/ (avatars)
 ```
 
 ## Deployment
