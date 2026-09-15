@@ -40,7 +40,9 @@ Offer {
   claims             Claim[]
 }
 Claim {
-  id, offerId, taker (Telegram user), amount (in give.cur), method (one of offer.get.methods)
+  id, offerId, taker (Telegram user), amount (in give.cur)
+  method        (one of offer.get.methods)     // what the taker pays with
+  receiveMethod (one of offer.give.methods)    // what the taker takes it on
   status   'pending' | 'confirmed' | 'done' | 'declined' | 'cancelled'
   takerDone bool, posterDone bool     // status becomes 'done' only when both are true
 }
@@ -91,7 +93,7 @@ Use the Telegram WebApp SDK: `themeParams` → CSS vars, `MainButton` for the pr
 
 1. **Browse** (home). Segmented control "Offers | My offers" at top. Section header "I'M LOOKING FOR" + horizontal chips: Anything, USDT, USD, EUR, AED, RUB, EGP (filters by `give.cur`). List rows (avatar initial, "200 USDT → RUB", rate line, methods line, then a status line): availability in green ("200 USDT available") or amber ("120 of 300 USDT left"), plus amber "100 USDT requested/reserved" when applicable, poster name + deals count, "Nh left" right-aligned. Only `active` offers: paused (and completed/closed/expired) ones appear in My offers, not on the board — nothing on the board is untakeable. Footer hint: "Amounts marked 'requested' aren't reserved yet — the poster still has to confirm." MainButton: **POST AN OFFER**.
 2. **Offer detail**. Centered header: avatar, "Alex · 14 deals", big `200 USDT → 19,300 RUB` (or "RUB · negotiable"), rate in accent colour, progress bar (grey = filled, amber 50% = reserved), "N available" / "expires…". If the viewer has an active claim, a status card: amber dot "Waiting for Alex to confirm" with "Cancel request"; green dot "Alex confirmed — it's yours" with **Message Alex** + **Mark as done** and "Release my reservation"; "You marked done · waiting for Alex"; "Deal completed". Sections: DETAILS (gives / accepts as chips, "Expiry: …"; partial fills are always allowed, so the page doesn't state it as if it were a per-offer setting), NOTE FROM ALEX (if any), OTHER TAKERS (name + "180 USDT · done/reserved/requested"). MainButton: **TAKE THIS OFFER** (hidden/disabled when own offer, paused, remaining = 0, or viewer already has a non-done claim).
-3. **Take**. Big numeric input with currency suffix, "Max 200 USDT", red "More than available" when exceeded, quick chips (50 / 100 / All 200), computed "You pay 9,650 RUB" (or "Rate to be agreed with Alex"), radio list "YOU'LL PAY WITH" from `offer.get.methods`, hint about confirmation. MainButton: **REQUEST 100 USDT** (disabled until valid). On submit → back to detail with the pending card and a toast.
+3. **Take**. Big numeric input with currency suffix, "Max 200 USDT", red "More than available" when exceeded, quick chips (50 / 100 / All 200), computed "You pay 9,650 RUB" (or "Rate to be agreed with Alex"), radio list "YOU'LL PAY WITH" from `offer.get.methods`, a second radio list "YOU'LL RECEIVE THE <give.cur> VIA" from `offer.give.methods`, hint about confirmation. MainButton: **REQUEST 100 USDT** (disabled until valid). On submit → back to detail with the pending card and a toast.
 4. **Create / Edit**. Sections: YOU GIVE (currency chips, amount input, method multi-select labelled "Network" for USDT else "Payment method"), YOU GET (currency chips **excluding the give currency**, methods), RATE / ASKING RATE · OPTIONAL (`1 USDT = ___ RUB`, Negotiable toggle with hint, live total), EXPIRES AFTER (6h/12h/24h/48h/None + hint sentence), NOTES · OPTIONAL (≤200, counter). MainButton **POST OFFER** / **SAVE CHANGES**, enabled only when amount > 0, ≥1 method each side, and (negotiable OR rate > 0). Edit constraint (not in prototype, must implement): amount cannot be set below `filled + reserved`.
 5. **My offers**. POSTED BY YOU: each offer card with claims underneath (Karim · 200 AED via Cash · "asks if available" → **Confirm** / Decline; confirmed → **Done**), footer actions Pause/Resume · Edit · Close. YOUR REQUESTS: rows linking to the offer with status ("waiting for confirmation", "confirmed — message Alex", "completed", "declined").
 
@@ -102,7 +104,7 @@ Use the Telegram WebApp SDK: `themeParams` → CSS vars, `MainButton` for the pr
 - `/mine` → one card per offer with `[Edit]` `[Pause]` `[Close]`; requests listed similarly.
 - `/board` → opens the mini app.
 - **Handshake notifications** (this is the core loop):
-  - to poster on new request: "Nour wants to take 100 USDT of your offer #1042 (100 USDT → 9,650 RUB via SBP). Is it still available?" `[Confirm]` `[Decline]`
+  - to poster on new request: "Nour wants to take 100 USDT of your offer #1042 (100 USDT → 9,650 RUB via SBP). Is it still available?" + "Nour wants the USDT via TRC20" `[Confirm]` `[Decline]`
   - after Confirm the same message is edited to keep `[Message Nour]` / `[Mark as done]` `[Release]`; taker is notified "Alex confirmed — you can message @alex now" with a Message button.
   - after Decline: message edited to "Declined — amount released"; taker notified.
   - Done is two-sided: when one side taps Done the other gets "Nour marked #1042 (100 USDT) as done. Confirm on your side to update the post." `[Done on my side too]` `[Not yet]`. When both → claim `done`, remaining recalculated, channel updated, both get a summary.

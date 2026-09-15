@@ -57,6 +57,11 @@ function posterCard(p: Parties, t: Translate, event?: ClaimEvent) {
       total: totalText(p.offer, p.claim.amount, t),
       method: p.claim.method,
     }),
+    t('claim-receive-method', {
+      name,
+      currency: p.offer.giveCurrency,
+      method: p.claim.receiveMethod,
+    }),
   ];
   const buttons = new InlineKeyboard();
 
@@ -94,6 +99,7 @@ function takerCard(p: Parties, t: Translate) {
   const lines = [
     t('your-request', {
       amount: amountOf(p),
+      receive: p.claim.receiveMethod,
       total: totalText(p.offer, p.claim.amount, t),
       method: p.claim.method,
     }),

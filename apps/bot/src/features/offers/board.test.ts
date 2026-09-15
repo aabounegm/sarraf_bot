@@ -99,6 +99,7 @@ test('[Take] on a board card enters the take wizard', async () => {
 
   await say(nour, '50');
   await tap(nour, 'SBP');
+  await tap(nour, 'TRC20');
   await tap(nour, 'Request 50 USDT');
   assert.equal(getOffer(db, posted.id).claims[0]?.amount, toMinor(50));
 });

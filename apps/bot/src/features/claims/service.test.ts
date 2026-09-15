@@ -44,7 +44,12 @@ const claimOf = (db: Db, offerId: number, takerId: number) =>
 
 test('take: pending requests reserve nothing and are visible to everyone', () => {
   const { db, offerId } = board();
-  const offer = createClaim(db, nour, { offerId, amount: toMinor(100), method: 'SBP' });
+  const offer = createClaim(db, nour, {
+    offerId,
+    amount: toMinor(100),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
 
   assert.equal(offer.availability.remaining, toMinor(200), 'pending reserves nothing');
   assert.equal(offer.availability.requested, toMinor(100));
@@ -58,10 +63,23 @@ test('take is refused for own offers, closed offers, unknown methods and seconds
     taker: Parameters<typeof createClaim>[1],
     patch: Partial<Parameters<typeof createClaim>[2]> = {},
   ) =>
-    code(() => createClaim(db, taker, { offerId, amount: toMinor(50), method: 'SBP', ...patch }));
+    code(() =>
+      createClaim(db, taker, {
+        offerId,
+        amount: toMinor(50),
+        method: 'SBP',
+        receiveMethod: 'TRC20',
+        ...patch,
+      }),
+    );
 
   assert.equal(take(alex), 'own-offer');
-  assert.equal(take(nour, { method: 'Cash' }), 'unknown-method');
+  assert.equal(
+    take(nour, { method: 'Cash' }),
+    'unknown-method',
+    'pays with a method off the offer',
+  );
+  assert.equal(take(nour, { receiveMethod: 'TON' }), 'unknown-method', 'receives on one too');
   assert.equal(take(nour, { amount: toMinor(300) }), 'amount-exceeds-remaining');
   assert.equal(take(nour), 'no-error');
   assert.equal(take(nour), 'already-claimed', 'one open request per taker per offer');
@@ -72,8 +90,13 @@ test('take is refused for own offers, closed offers, unknown methods and seconds
 
 test('confirm reserves; a second confirm beyond what is left is refused', () => {
   const { db, offerId } = board();
-  createClaim(db, nour, { offerId, amount: toMinor(150), method: 'SBP' });
-  createClaim(db, karim, { offerId, amount: toMinor(100), method: 'Tinkoff' });
+  createClaim(db, nour, { offerId, amount: toMinor(150), method: 'SBP', receiveMethod: 'TRC20' });
+  createClaim(db, karim, {
+    offerId,
+    amount: toMinor(100),
+    method: 'Tinkoff',
+    receiveMethod: 'TRC20',
+  });
   const nours = claimOf(db, offerId, nour.id).id;
   const karims = claimOf(db, offerId, karim.id).id;
 
@@ -97,7 +120,7 @@ test('confirm reserves; a second confirm beyond what is left is refused', () => 
 
 test('contact details are exchanged only after confirmation', () => {
   const { db, offerId } = board();
-  createClaim(db, nour, { offerId, amount: toMinor(50), method: 'SBP' });
+  createClaim(db, nour, { offerId, amount: toMinor(50), method: 'SBP', receiveMethod: 'TRC20' });
   const claimId = claimOf(db, offerId, nour.id).id;
 
   assert.equal(getOffer(db, offerId, nour.id).poster.username, null, 'pending: no handle');
@@ -112,7 +135,7 @@ test('contact details are exchanged only after confirmation', () => {
 
 test('done is two-sided and completes the offer when nothing is left', () => {
   const { db, offerId } = board();
-  createClaim(db, nour, { offerId, amount: toMinor(200), method: 'SBP' });
+  createClaim(db, nour, { offerId, amount: toMinor(200), method: 'SBP', receiveMethod: 'TRC20' });
   const claimId = claimOf(db, offerId, nour.id).id;
   applyClaimAction(db, alex.id, claimId, 'confirm');
 
@@ -130,7 +153,7 @@ test('done is two-sided and completes the offer when nothing is left', () => {
 
 test('cancel, decline and release put the amount back', () => {
   const { db, offerId } = board();
-  createClaim(db, nour, { offerId, amount: toMinor(100), method: 'SBP' });
+  createClaim(db, nour, { offerId, amount: toMinor(100), method: 'SBP', receiveMethod: 'TRC20' });
   const nours = claimOf(db, offerId, nour.id).id;
   assert.equal(
     code(() => applyClaimAction(db, alex.id, nours, 'cancel')),
@@ -138,7 +161,7 @@ test('cancel, decline and release put the amount back', () => {
   );
   assert.equal(applyClaimAction(db, nour.id, nours, 'cancel').availability.requested, 0);
 
-  createClaim(db, karim, { offerId, amount: toMinor(100), method: 'SBP' });
+  createClaim(db, karim, { offerId, amount: toMinor(100), method: 'SBP', receiveMethod: 'TRC20' });
   const karims = claimOf(db, offerId, karim.id).id;
   applyClaimAction(db, alex.id, karims, 'confirm');
   const released = applyClaimAction(db, karim.id, karims, 'release');
@@ -148,9 +171,14 @@ test('cancel, decline and release put the amount back', () => {
 
 test('your requests: newest first, handle only once confirmed', () => {
   const { db, offerId } = board();
-  createClaim(db, nour, { offerId, amount: toMinor(50), method: 'SBP' });
+  createClaim(db, nour, { offerId, amount: toMinor(50), method: 'SBP', receiveMethod: 'TRC20' });
   const second = createOffer(db, karim, { ...input, giveAmount: toMinor(10) });
-  createClaim(db, nour, { offerId: second.id, amount: toMinor(10), method: 'SBP' });
+  createClaim(db, nour, {
+    offerId: second.id,
+    amount: toMinor(10),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
 
   const mine = listClaimsByTaker(db, nour.id);
   assert.deepEqual(

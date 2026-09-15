@@ -49,10 +49,22 @@ test('claims API: request, confirm, list mine, reject junk', async () => {
 
   const offer = (await (await post('/api/offers', alex, offerBody)).json()) as OfferBody;
 
-  const bad = await post('/api/claims', nour, { offerId: offer.id, amount: 0, method: 'SBP' });
+  const bad = await post('/api/claims', nour, {
+    offerId: offer.id,
+    amount: 0,
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
   assert.equal(bad.status, 400, 'zero amount is not a request');
   assert.equal(
-    (await post('/api/claims', alex, { offerId: offer.id, amount: 100, method: 'SBP' })).status,
+    (
+      await post('/api/claims', alex, {
+        offerId: offer.id,
+        amount: 100,
+        method: 'SBP',
+        receiveMethod: 'TRC20',
+      })
+    ).status,
     403,
     'the poster cannot take their own offer',
   );
@@ -61,6 +73,7 @@ test('claims API: request, confirm, list mine, reject junk', async () => {
     offerId: offer.id,
     amount: toMinor(50),
     method: 'SBP',
+    receiveMethod: 'TRC20',
   });
   assert.equal(created.status, 201);
   const withClaim = (await created.json()) as OfferBody;

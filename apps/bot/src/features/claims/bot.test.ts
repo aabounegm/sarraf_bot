@@ -32,7 +32,12 @@ function chat() {
 test('a request is a DM to the poster with Confirm/Decline, kept up to date afterwards', async () => {
   const { db, calls, tap, sent } = chat();
   const offer = createOffer(db, alex, input);
-  createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
+  createClaim(db, nour, {
+    offerId: offer.id,
+    amount: toMinor(50),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
   await flushClaimNotifications();
 
   const request = sent(alex.id).at(-1)!;
@@ -73,7 +78,12 @@ test('a contact button Telegram refuses costs the button, not the notification',
   // No username on either side, so both cards link by id — the link Telegram may refuse.
   const dana = { id: 3, first_name: 'Dana' };
   const offer = createOffer(db, dana, input);
-  createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
+  createClaim(db, nour, {
+    offerId: offer.id,
+    amount: toMinor(50),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
   await flushClaimNotifications();
 
   // What a `tg://user?id=` link to someone whose privacy settings forbid it answers with.
@@ -93,7 +103,12 @@ test('a contact button Telegram refuses costs the button, not the notification',
 test('a poster card that cannot be edited does not cost the taker the news', async () => {
   const { db, tap, sent, refuseNext } = chat();
   const offer = createOffer(db, alex, input);
-  createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
+  createClaim(db, nour, {
+    offerId: offer.id,
+    amount: toMinor(50),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
   await flushClaimNotifications();
 
   refuseNext('editMessageText', "Bad Request: message can't be edited");
@@ -106,7 +121,12 @@ test('a poster card that cannot be edited does not cost the taker the news', asy
 test('a button on a claim that moved on says so instead of acting twice', async () => {
   const { db, calls, tap } = chat();
   const offer = createOffer(db, alex, input);
-  createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
+  createClaim(db, nour, {
+    offerId: offer.id,
+    amount: toMinor(50),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
   await flushClaimNotifications();
   await tap(alex, 'Decline');
   const from = calls.length;
@@ -120,7 +140,12 @@ test('a button on a claim that moved on says so instead of acting twice', async 
 test('done is two-sided: the other party is asked, then both get the summary', async () => {
   const { db, calls, tap, sent } = chat();
   const offer = createOffer(db, alex, input);
-  createClaim(db, nour, { offerId: offer.id, amount: toMinor(200), method: 'SBP' });
+  createClaim(db, nour, {
+    offerId: offer.id,
+    amount: toMinor(200),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
   await flushClaimNotifications();
   await tap(alex, 'Confirm');
   await flushClaimNotifications();
@@ -151,7 +176,7 @@ test('done is two-sided: the other party is asked, then both get the summary', a
 
 test('the channel Take button, bot half: /start take_<id> runs the take wizard', async () => {
   const { db, say, tap, sent } = chat();
-  const offer = createOffer(db, alex, input);
+  const offer = createOffer(db, alex, { ...input, giveMethods: ['TRC20', 'TON'] });
 
   await say(nour, `/start ${startParam('take', offer.id)}`);
   assert.match(sent(nour.id).at(0)!.text!, /Alex gives 200 USDT for RUB/, 'the offer, first');
@@ -168,16 +193,31 @@ test('the channel Take button, bot half: /start take_<id> runs the take wizard',
   );
 
   await tap(nour, 'SBP');
+  assert.deepEqual(
+    sent(nour.id)
+      .at(-1)!
+      .buttons.map((b) => b.text),
+    ['TRC20', 'TON', 'Cancel'],
+    'and the methods the offer pays out on',
+  );
+
+  await tap(nour, 'TON');
   const preview = sent(nour.id).at(-1)!;
-  assert.match(preview.text!, /asking for 50 USDT of #\d+, 4,825 RUB, via SBP/);
+  assert.match(preview.text!, /asking for 50 USDT of #\d+ via TON, paying 4,825 RUB via SBP/);
 
   await tap(nour, 'Request 50 USDT');
   await flushClaimNotifications();
   const claim = getOffer(db, offer.id).claims[0];
   assert.equal(claim?.amount, toMinor(50));
   assert.equal(claim?.method, 'SBP');
+  assert.equal(claim?.receiveMethod, 'TON');
   assert.equal(claim?.status, 'pending');
   assert.match(sent(alex.id).at(-1)!.text!, /Nour wants to take 50 USDT/, 'the poster is asked');
+  assert.match(
+    sent(alex.id).at(-1)!.text!,
+    /Nour wants the USDT via TON/,
+    'and told where to send',
+  );
 });
 
 test('the take wizard refuses an offer that is not takeable', async () => {

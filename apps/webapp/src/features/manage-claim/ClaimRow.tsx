@@ -2,6 +2,7 @@ import { useLocalization } from '@fluent/react';
 import { Avatar, Button, Cell } from '@telegram-apps/telegram-ui';
 
 import { useClaimAction } from '../../entities/claim/api.ts';
+import { claimMethodsText } from '../../entities/claim/format.ts';
 import type { Claim } from '../../entities/claim/model.ts';
 import { amount } from '../../entities/offer/format.ts';
 import type { OfferDetail } from '../../entities/offer/model.ts';
@@ -23,37 +24,40 @@ export function ClaimRow({ offer, claim }: { offer: OfferDetail; claim: Claim })
         pending ? l10n.getString('asks-if-available') : l10n.getString(`claim-${claim.status}`)
       }
       description={
-        <span style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
-          {pending && (
-            <>
-              <Button size="s" onClick={() => run('confirm')}>
-                {l10n.getString('confirm')}
-              </Button>
-              <Button
-                size="s"
-                mode="plain"
-                style={{ color: 'var(--tg-theme-destructive-text-color)' }}
-                onClick={() => run('decline')}
-              >
-                {l10n.getString('decline')}
-              </Button>
-            </>
-          )}
-          {claim.status === 'confirmed' && (
-            <>
-              {claim.taker.username && (
-                <Button size="s" onClick={() => openChat(claim.taker.username!)}>
-                  {l10n.getString('message-user', { name: claim.taker.firstName })}
+        <>
+          <div>{claimMethodsText(l10n, offer, claim)}</div>
+          <span style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
+            {pending && (
+              <>
+                <Button size="s" onClick={() => run('confirm')}>
+                  {l10n.getString('confirm')}
                 </Button>
-              )}
-              {!claim.posterDone && (
-                <Button size="s" mode="bezeled" onClick={() => run('done')}>
-                  {l10n.getString('mark-done')}
+                <Button
+                  size="s"
+                  mode="plain"
+                  style={{ color: 'var(--tg-theme-destructive-text-color)' }}
+                  onClick={() => run('decline')}
+                >
+                  {l10n.getString('decline')}
                 </Button>
-              )}
-            </>
-          )}
-        </span>
+              </>
+            )}
+            {claim.status === 'confirmed' && (
+              <>
+                {claim.taker.username && (
+                  <Button size="s" onClick={() => openChat(claim.taker.username!)}>
+                    {l10n.getString('message-user', { name: claim.taker.firstName })}
+                  </Button>
+                )}
+                {!claim.posterDone && (
+                  <Button size="s" mode="bezeled" onClick={() => run('done')}>
+                    {l10n.getString('mark-done')}
+                  </Button>
+                )}
+              </>
+            )}
+          </span>
+        </>
       }
     >
       {claim.taker.firstName} · {amount(claim.amount, offer.giveCurrency)}

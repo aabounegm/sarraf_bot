@@ -107,6 +107,7 @@ all-of = All { $amount }
 you-pay = You pay { $amount }
 rate-to-agree = Rate to be agreed with { $name }
 pay-with = You'll pay with
+receive-with = You'll receive the { $currency } via
 take-hint = { $name } gets a notification and confirms it's still available. Until then nothing is reserved.
 request-amount = Request { $amount }
 take-offer = Take this offer
@@ -117,7 +118,8 @@ claim-yours = { $name } confirmed — it's yours
 contact-handle = Message them at @{ $handle }
 claim-you-marked-done = You marked done · waiting for { $name }
 claim-finished = Deal completed
-your-request = Your request: { $amount } · { $total } via { $method }
+your-request = Your request: { $amount } to { $receive } · { $total } via { $method }
+claim-methods = Pays { $total } via { $method } · wants the { $currency } via { $receive }
 cancel-request = Cancel request
 message-user = Message { $name }
 mark-done = Mark as done
@@ -146,6 +148,7 @@ error-unknown-method = That payment method isn't on the offer.
 
 ## Bot — claim notifications
 claim-request = { $name } wants to take { $amount } of your offer #{ $id } ({ $total } via { $method }). Is it still available?
+claim-receive-method = { $name } wants the { $currency } via { $method }
 claim-line-confirmed = ✓ Confirmed — reserved for { $name }
 claim-line-declined = Declined — amount released
 claim-line-timeout = No answer — the request expired
@@ -221,4 +224,4 @@ wizard-use-buttons = Use the buttons above, or /cancel.
 
 ## Bot — take wizard
 take-amount-hint = { $max }. Send a number, or:
-take-preview = You're asking for { $amount } of #{ $id }, { $total }, via { $method }.
+take-preview = You're asking for { $amount } of #{ $id } via { $receive }, paying { $total } via { $method }.

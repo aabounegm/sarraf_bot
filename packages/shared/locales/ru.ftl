@@ -108,6 +108,7 @@ all-of = Все { $amount }
 you-pay = Вы платите { $amount }
 rate-to-agree = Курс обсуждается с { $name }
 pay-with = Вы заплатите через
+receive-with = Вы получите { $currency } через
 take-hint = { $name } получит уведомление и подтвердит, что предложение в силе. До этого ничего не резервируется.
 request-amount = Запросить { $amount }
 take-offer = Взять это предложение
@@ -118,7 +119,8 @@ claim-yours = { $name } подтвердил(а) — это ваше
 contact-handle = Написать напрямую: @{ $handle }
 claim-you-marked-done = Вы отметили как выполненное · ждём { $name }
 claim-finished = Сделка завершена
-your-request = Ваш запрос: { $amount } · { $total } через { $method }
+your-request = Ваш запрос: { $amount } на { $receive } · { $total } через { $method }
+claim-methods = Платит { $total } через { $method } · хочет { $currency } на { $receive }
 cancel-request = Отменить запрос
 message-user = Написать { $name }
 mark-done = Отметить выполненным
@@ -147,6 +149,7 @@ error-unknown-method = Такого способа оплаты нет в пре
 
 ## Bot — claim notifications
 claim-request = { $name } хочет взять { $amount } из вашего предложения #{ $id } ({ $total } через { $method }). Оно ещё актуально?
+claim-receive-method = { $name } хочет получить { $currency } через { $method }
 claim-line-confirmed = ✓ Подтверждено — зарезервировано за { $name }
 claim-line-declined = Отклонено — сумма освобождена
 claim-line-timeout = Без ответа — запрос истёк
@@ -222,4 +225,4 @@ wizard-use-buttons = Используйте кнопки выше или /cancel
 
 ## Bot — take wizard
 take-amount-hint = { $max }. Отправьте число или:
-take-preview = Вы запрашиваете { $amount } из #{ $id }, { $total }, через { $method }.
+take-preview = Вы запрашиваете { $amount } из #{ $id } на { $receive }, платите { $total } через { $method }.

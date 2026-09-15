@@ -117,7 +117,12 @@ test('an offer past its expiry expires once, its post goes, the poster can repos
 test('a pending request nobody answered in 12h is timed out and the taker told', async () => {
   const { db, calls } = wire();
   const offer = createOffer(db, alex, { ...input, expiresInHours: 48 });
-  createClaim(db, nour, { offerId: offer.id, amount: toMinor(100), method: 'SBP' });
+  createClaim(db, nour, {
+    offerId: offer.id,
+    amount: toMinor(100),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
   const claimId = claimIdOf(db, offer.id);
   await settle();
 
@@ -227,7 +232,12 @@ test('[Repost] on the expiry DM is a button in the chat, on the same offer', asy
 test('closing an offer notifies the takers of its pending requests', async () => {
   const { db, calls } = wire();
   const offer = createOffer(db, alex, { ...input, expiresInHours: 48 });
-  createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
+  createClaim(db, nour, {
+    offerId: offer.id,
+    amount: toMinor(50),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
   const pending = claimIdOf(db, offer.id);
   createClaim(
     db,
@@ -236,6 +246,7 @@ test('closing an offer notifies the takers of its pending requests', async () =>
       offerId: offer.id,
       amount: toMinor(50),
       method: 'SBP',
+      receiveMethod: 'TRC20',
     },
   );
   const confirmed = getOffer(db, offer.id).claims.find((c) => c.id !== pending)!.id;

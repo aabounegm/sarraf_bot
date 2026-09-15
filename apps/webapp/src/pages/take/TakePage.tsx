@@ -36,16 +36,17 @@ function TakeForm({ offer }: { offer: OfferDetail }) {
   const create = useCreateClaim();
   const [value, setValue] = useState('');
   const [method, setMethod] = useState(offer.getMethods[0] ?? '');
+  const [receiveMethod, setReceiveMethod] = useState(offer.giveMethods[0] ?? '');
   const [error, setError] = useState<string | null>(null);
 
   const remaining = offer.availability.remaining;
   const minor = toMinor(Number(value.replace(',', '.')));
   const tooMuch = minor > remaining;
-  const valid = minor > 0 && !tooMuch && method !== '';
+  const valid = minor > 0 && !tooMuch && method !== '' && receiveMethod !== '';
 
   const submit = () =>
     create.mutate(
-      { offerId: offer.id, amount: minor, method },
+      { offerId: offer.id, amount: minor, method, receiveMethod },
       {
         onSuccess: () => {
           haptic('success');
@@ -100,15 +101,27 @@ function TakeForm({ offer }: { offer: OfferDetail }) {
         {minor > 0 && <Cell readOnly subtitle={payText(l10n, offer, minor)} />}
       </Section>
 
-      <Section
-        header={l10n.getString('pay-with')}
-        footer={l10n.getString('take-hint', { name: offer.poster.firstName })}
-      >
+      <Section header={l10n.getString('pay-with')}>
         {offer.getMethods.map((m) => (
           <Cell
             key={m}
             Component="label"
             before={<Radio checked={method === m} onChange={() => setMethod(m)} />}
+          >
+            {m}
+          </Cell>
+        ))}
+      </Section>
+
+      <Section
+        header={l10n.getString('receive-with', { currency: offer.giveCurrency })}
+        footer={l10n.getString('take-hint', { name: offer.poster.firstName })}
+      >
+        {offer.giveMethods.map((m) => (
+          <Cell
+            key={m}
+            Component="label"
+            before={<Radio checked={receiveMethod === m} onChange={() => setReceiveMethod(m)} />}
           >
             {m}
           </Cell>

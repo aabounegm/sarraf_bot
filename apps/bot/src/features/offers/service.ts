@@ -43,6 +43,7 @@ export interface OfferDetail extends OfferSummary {
     taker: { id: number; firstName: string; username: string | null };
     amount: number;
     method: string;
+    receiveMethod: string;
     status: ClaimStatus;
     takerDone: boolean;
     posterDone: boolean;
@@ -186,6 +187,7 @@ export function getOffer(db: DbOrTx, offerId: number, viewerId?: number): OfferD
       },
       amount: c.amount,
       method: c.method,
+      receiveMethod: c.receiveMethod,
       status: c.status,
       takerDone: c.takerDone,
       posterDone: c.posterDone,

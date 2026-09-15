@@ -5,19 +5,29 @@ import { amount } from '../offer/format.ts';
 import type { OfferDetail } from '../offer/model.ts';
 import type { Claim } from './model.ts';
 
-/** "Your request: 100 USDT · 9,650 RUB via SBP" — the total is dropped when there is no rate. */
+/** What the claim comes to in the offer's get currency, or the reminder that the rate is open. */
+const totalOf = (l10n: ReactLocalization, offer: OfferDetail, minor: number) =>
+  offer.rate === null
+    ? l10n.getString('rate-open')
+    : amount(convert(offer.giveCurrency, offer.getCurrency, offer.rate, minor), offer.getCurrency);
+
+/** "Your request: 100 USDT to TRC20 · 9,650 RUB via SBP" — the total goes when there is no rate. */
 export function requestText(l10n: ReactLocalization, offer: OfferDetail, claim: Claim) {
-  const total =
-    offer.rate === null
-      ? l10n.getString('rate-open')
-      : amount(
-          convert(offer.giveCurrency, offer.getCurrency, offer.rate, claim.amount),
-          offer.getCurrency,
-        );
   return l10n.getString('your-request', {
     amount: amount(claim.amount, offer.giveCurrency),
-    total,
+    receive: claim.receiveMethod,
+    total: totalOf(l10n, offer, claim.amount),
     method: claim.method,
+  });
+}
+
+/** The same claim from the poster's side: what they are paid with, and where the taker wants it. */
+export function claimMethodsText(l10n: ReactLocalization, offer: OfferDetail, claim: Claim) {
+  return l10n.getString('claim-methods', {
+    total: totalOf(l10n, offer, claim.amount),
+    method: claim.method,
+    currency: offer.giveCurrency,
+    receive: claim.receiveMethod,
   });
 }
 

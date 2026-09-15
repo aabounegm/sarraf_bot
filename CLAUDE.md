@@ -123,7 +123,8 @@ Rules of thumb:
 **Offers, channel post, the claims handshake, the bot chat and the scheduler, 2026-09-14.** See
 [docs/features/offers.md](docs/features/offers.md), [docs/features/claims.md](docs/features/claims.md)
 and [docs/features/bot.md](docs/features/bot.md). Working on **both** surfaces:
-create/browse/detail/edit/pause/resume/close/repost; take → confirm/decline → two-sided done (request DM
+create/browse/detail/edit/pause/resume/close/repost; take (amount, what you pay with, what you
+receive on) → confirm/decline → two-sided done (request DM
 with `[Confirm]` `[Decline]`, re-rendered on every transition, stale buttons answer "Already closed");
 "Your requests"; contact gating; every mutation re-renders the channel post (verified against a real
 channel). In the chat: the reply keyboard, Telegram's "/" menu and the mini-app button next to the

@@ -17,9 +17,10 @@ import { createClaim } from './service.ts';
 export const TAKE_WIZARD = 'take-wizard';
 
 /**
- * Amount → method → confirm, from `/start take_1042`. The mini app's take screen asks the same
- * three things and both end in `createClaim`, which is what notifies the poster and updates the
- * channel post. The poster's @username is not shown here: it is earned by a confirmed claim.
+ * Amount → pay with → receive on → confirm, from `/start take_1042`. The mini app's take screen
+ * asks the same four things and both end in `createClaim`, which is what notifies the poster and
+ * updates the channel post. The poster's @username is not shown here: it is earned by a confirmed
+ * claim.
  */
 export function takeWizard(db: Db) {
   return async (conversation: Wizard, ctx: WizardContext, offerId: number) => {
@@ -56,6 +57,13 @@ export function takeWizard(db: Db) {
       chunk(choicesOf(offer.getMethods), 2),
     );
 
+    const receiveMethod = await choose(
+      conversation,
+      ctx,
+      ctx.t('receive-with', { currency: offer.giveCurrency }),
+      chunk(choicesOf(offer.giveMethods), 2),
+    );
+
     const name = offer.poster.firstName;
     // The only other button is [Cancel], which bot/wizard.ts halts on.
     await choose(
@@ -65,6 +73,7 @@ export function takeWizard(db: Db) {
         ctx.t('take-preview', {
           amount: `${formatAmount(amount)} ${offer.giveCurrency}`,
           id: offer.id,
+          receive: receiveMethod,
           total: totalText(offer, amount, ctx.t),
           method,
         }),
@@ -81,7 +90,9 @@ export function takeWizard(db: Db) {
         ],
       ],
     );
-    const result = await conversation.external(() => submit(db, user, offer.id, amount, method));
+    const result = await conversation.external(() =>
+      submit(db, user, { offerId: offer.id, amount, method, receiveMethod }),
+    );
     if ('error' in result) return void ctx.reply(errorText(ctx, result.error, { amount: max }));
     await ctx.reply(
       `${ctx.t('claim-waiting', { name })}\n${ctx.t('claim-waiting-hint', { name })}`,
@@ -116,12 +127,10 @@ function takeable(
 function submit(
   db: Db,
   user: { id: number; first_name: string; username?: string; language_code?: string },
-  offerId: number,
-  amount: number,
-  method: string,
+  input: ClaimInput,
 ): { id: number } | { error: string } {
   try {
-    const offer = createClaim(db, user, ClaimInput.parse({ offerId, amount, method }));
+    const offer = createClaim(db, user, ClaimInput.parse(input));
     return { id: offer.id };
   } catch (err) {
     return { error: errorCode(err) ?? 'internal' };

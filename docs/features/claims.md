@@ -7,17 +7,18 @@ handshake notifications, Business rules.
 **Status (2026-09-15):** done on all three surfaces, bot chat included, and the 12 h auto-decline
 runs in the scheduler. The poster's confirmation now reaches the taker as their own claim card
 (handle, `[Mark as done]`, `[Release]`), and a DM can no longer be lost to the other side's failure
-— see § Bot. Not yet verified against a real chat.
+— see § Bot. A take now also asks which of the offer's own methods the taker wants the money on
+(`claims.receiveMethod`). Not yet verified against a real chat.
 
 ## The same feature on each surface
 
-| Action          | Mini app                                                            | Bot chat                                                                       | Channel                             |
-| --------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------- |
-| Take            | `/offers/$offerId/take` `TakePage` (deep link `startapp=take_<id>`) | take wizard from `?start=take_<id>`, then the request DM to the poster         | "N requested" line; Take button     |
-| Confirm/Decline | `ClaimRow` under the offer in My offers                             | `[Confirm]` `[Decline]` on that DM                                             | reserved amount moves the status    |
-| Cancel/Release  | `ClaimCard` on the offer detail (taker), `ClaimRow` (poster)        | `[Cancel request]` / `[Release]` on either side's card; the other side is told | amount returns to available         |
-| Mark done       | `ClaimCard` / `ClaimRow`, two-sided                                 | `[Mark as done]`, then `[Done on my side too]` / `[Not yet]`                   | post deleted once the offer is full |
-| Your requests   | `/my` → "Your requests" (`RequestRow`)                              | `/mine` — a taker card per open request, with its buttons                      | —                                   |
+| Action          | Mini app                                                                                           | Bot chat                                                                                         | Channel                             |
+| --------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| Take            | `/offers/$offerId/take` `TakePage` (deep link `startapp=take_<id>`): amount, pay with, receive via | take wizard from `?start=take_<id>`: the same three questions, then the request DM to the poster | "N requested" line; Take button     |
+| Confirm/Decline | `ClaimRow` under the offer in My offers                                                            | `[Confirm]` `[Decline]` on that DM                                                               | reserved amount moves the status    |
+| Cancel/Release  | `ClaimCard` on the offer detail (taker), `ClaimRow` (poster)                                       | `[Cancel request]` / `[Release]` on either side's card; the other side is told                   | amount returns to available         |
+| Mark done       | `ClaimCard` / `ClaimRow`, two-sided                                                                | `[Mark as done]`, then `[Done on my side too]` / `[Not yet]`                                     | post deleted once the offer is full |
+| Your requests   | `/my` → "Your requests" (`RequestRow`)                                                             | `/mine` — a taker card per open request, with its buttons                                        | —                                   |
 
 ## API — `apps/bot/src/features/claims/api.ts` (all behind `telegramAuth`)
 
@@ -32,8 +33,11 @@ availability the other screens show. The mini app writes it straight into the de
 
 ## Rules — `service.ts`
 
-- Take: offer must be `active`, not your own, `method ∈ offer.getMethods`, `amount ≤ remaining`,
-  and you may hold only one open (pending or confirmed) claim per offer at a time.
+- Take: offer must be `active`, not your own, `method ∈ offer.getMethods` (what the taker pays
+  with), `receiveMethod ∈ offer.giveMethods` (what they take it on), `amount ≤ remaining`, and you
+  may hold only one open (pending or confirmed) claim per offer at a time. Both methods are asked
+  on both surfaces — the poster's card then says where to send without asking in chat
+  (`claim-receive-method`), and the taker's says it back (`your-request`).
 - **Pending reserves nothing** — `availability()` in `@sarraf/shared` is the one definition.
   Confirming is what moves the amount, so confirm re-checks `amount ≤ remaining` (two pending
   requests can both fit individually but not together — the second gets `amount-exceeds-remaining`).
@@ -105,6 +109,9 @@ handshake, and a taker who blocked the bot is not an error.
 `features/manage-claim/ClaimCard.tsx` (the taker's own request on the offer detail) ·
 `features/manage-claim/ClaimRow.tsx` (a request under the poster's own offer) ·
 `pages/my-offers/RequestRow.tsx`.
+
+`ClaimRow` prints both of the claim's methods (`claim-methods`: what the taker pays with, what they
+want the money on), which is the mini app's half of what the request DM tells the poster.
 
 A "Message X" button only appears when the other side has a Telegram username: a mini app can open
 `t.me/<username>` but not a `tg://user?id=` link. The bot's own notifications reach those users by id.

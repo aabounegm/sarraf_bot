@@ -151,11 +151,16 @@ test('/mine lists the requests you made, and their buttons act on the claim', as
   const { db, say, tap, sent } = harness();
   const nour = { id: 2, first_name: 'Nour' };
   const offer = createOffer(db, alex, input);
-  createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
+  createClaim(db, nour, {
+    offerId: offer.id,
+    amount: toMinor(50),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
 
   await say(nour, '/mine');
   const card = sent(nour.id).at(-1)!;
-  assert.match(card.text!, /Your request: 50 USDT · 4,825 RUB via SBP/);
+  assert.match(card.text!, /Your request: 50 USDT to TRC20 · 4,825 RUB via SBP/);
   assert.match(card.text!, /Waiting for Alex to confirm/);
   assert.deepEqual(
     card.buttons.map((b) => b.text),
@@ -217,7 +222,12 @@ test('a claim button still works while a wizard is waiting for an answer', async
   const nour = { id: 2, first_name: 'Nour' };
   const offer = createOffer(db, alex, input);
   startClaimNotifications({ api: bot.api, db });
-  createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
+  createClaim(db, nour, {
+    offerId: offer.id,
+    amount: toMinor(50),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
   await flushClaimNotifications();
 
   await say(alex, '/new');
@@ -232,7 +242,12 @@ test("an offer card button on someone else's offer says so and shows nothing", a
   const { db, say, tap, calls } = harness();
   const nour = { id: 2, first_name: 'Nour' };
   const offer = createOffer(db, alex, input);
-  createClaim(db, nour, { offerId: offer.id, amount: toMinor(50), method: 'SBP' });
+  createClaim(db, nour, {
+    offerId: offer.id,
+    amount: toMinor(50),
+    method: 'SBP',
+    receiveMethod: 'TRC20',
+  });
 
   await say(alex, '/mine');
   await tap(nour, 'Pause'); // the same callback data, a different user

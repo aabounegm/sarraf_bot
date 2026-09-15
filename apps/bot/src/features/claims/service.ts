@@ -37,6 +37,7 @@ export function createClaim(db: Db, taker: TelegramUser, input: ClaimInput): Off
     if (row.posterId === taker.id) throw new AppError(403, 'own-offer');
     if (row.status !== 'active') throw new AppError(409, 'offer-unavailable');
     if (!row.getMethods.includes(input.method)) throw new AppError(400, 'unknown-method');
+    if (!row.giveMethods.includes(input.receiveMethod)) throw new AppError(400, 'unknown-method');
     if (openClaimOf(tx, row.id, taker.id)) throw new AppError(409, 'already-claimed');
     if (input.amount > remainingOf(tx, row)) throw new AppError(409, 'amount-exceeds-remaining');
 
@@ -47,6 +48,7 @@ export function createClaim(db: Db, taker: TelegramUser, input: ClaimInput): Off
         takerId: taker.id,
         amount: input.amount,
         method: input.method,
+        receiveMethod: input.receiveMethod,
       })
       .returning()
       .get().id;

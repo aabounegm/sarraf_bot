@@ -110,6 +110,7 @@ all-of = الكل { $amount }
 you-pay = تدفع { $amount }
 rate-to-agree = السعر يُتفق عليه مع { $name }
 pay-with = ستدفع عبر
+receive-with = ستستلم { $currency } عبر
 take-hint = سيصل إشعار إلى { $name } ليؤكد أن العرض ما زال متاحاً. لا شيء محجوز قبل ذلك.
 request-amount = اطلب { $amount }
 take-offer = خذ هذا العرض
@@ -120,7 +121,8 @@ claim-yours = أكّد { $name } — العرض لك
 contact-handle = راسله مباشرة: @{ $handle }
 claim-you-marked-done = أنهيت من جهتك · بانتظار { $name }
 claim-finished = اكتملت الصفقة
-your-request = طلبك: { $amount } · { $total } عبر { $method }
+your-request = طلبك: { $amount } على { $receive } · { $total } عبر { $method }
+claim-methods = يدفع { $total } عبر { $method } · يريد { $currency } على { $receive }
 cancel-request = إلغاء الطلب
 message-user = راسل { $name }
 mark-done = تم الإنجاز
@@ -149,6 +151,7 @@ error-unknown-method = طريقة الدفع هذه ليست ضمن العرض.
 
 ## Bot — claim notifications
 claim-request = يريد { $name } أخذ { $amount } من عرضك #{ $id } ({ $total } عبر { $method }). هل ما زال متاحاً؟
+claim-receive-method = يريد { $name } استلام { $currency } عبر { $method }
 claim-line-confirmed = ✓ مؤكد — محجوز لـ { $name }
 claim-line-declined = مرفوض — أُعيد المبلغ
 claim-line-timeout = بلا رد — انتهت صلاحية الطلب
@@ -225,4 +228,4 @@ wizard-use-buttons = استخدم الأزرار أعلاه، أو /cancel.
 
 ## Bot — take wizard
 take-amount-hint = { $max }. أرسل رقماً، أو:
-take-preview = تطلب { $amount } من #{ $id }، { $total }، عبر { $method }.
+take-preview = تطلب { $amount } من #{ $id } على { $receive }، وتدفع { $total } عبر { $method }.
