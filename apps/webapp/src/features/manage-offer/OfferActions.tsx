@@ -6,13 +6,33 @@ import { useOfferAction } from '../../entities/offer/api.ts';
 import type { OfferSummary } from '../../entities/offer/model.ts';
 import { confirmDialog, haptic } from '../../shared/lib/telegram.ts';
 
-/** Pause/Resume · Edit · Close for an offer the current user posted. */
+/** Pause/Resume · Edit · Close for an offer the current user posted — or Repost, once it expired. */
 export function OfferActions({ offer }: { offer: OfferSummary }) {
   const { l10n } = useLocalization();
   const navigate = useNavigate();
   const action = useOfferAction();
-  const finished = offer.status !== 'active' && offer.status !== 'paused';
-  if (finished) return null;
+
+  // Expired is the one ending an offer comes back from, so it keeps a button where the others
+  // have none: same id, same claim history, a fresh 24h. The one item is passed as an array
+  // because InlineButtons types its children as one, and a lone child is not.
+  if (offer.status === 'expired')
+    return (
+      <InlineButtons mode="bezeled">
+        {[
+          <InlineButtons.Item
+            key="repost"
+            text={l10n.getString('repost')}
+            onClick={() =>
+              action.mutate(
+                { id: offer.id, action: 'repost' },
+                { onSuccess: () => haptic('success') },
+              )
+            }
+          />,
+        ]}
+      </InlineButtons>
+    );
+  if (offer.status !== 'active' && offer.status !== 'paused') return null;
 
   const close = async () => {
     if (

@@ -50,14 +50,21 @@ export function MyOffersPage() {
               {o.claims.filter(isOpen).map((c) => (
                 <ClaimRow key={c.id} offer={o} claim={c} />
               ))}
+              {/* A finished offer says so; expired also gets OfferActions' [Repost] under it. */}
               <div style={{ padding: '0 16px 12px' }}>
-                {o.status === 'active' || o.status === 'paused' ? (
-                  <OfferActions offer={o} />
-                ) : (
-                  <span style={{ color: 'var(--tg-theme-hint-color)', fontSize: 13 }}>
+                {o.status !== 'active' && o.status !== 'paused' && (
+                  <span
+                    style={{
+                      color: 'var(--tg-theme-hint-color)',
+                      fontSize: 13,
+                      display: 'block',
+                      marginBottom: 6,
+                    }}
+                  >
                     {l10n.getString(`status-${o.status}`)}
                   </span>
                 )}
+                <OfferActions offer={o} />
               </div>
             </div>
           ))}

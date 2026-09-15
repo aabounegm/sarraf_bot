@@ -31,7 +31,11 @@ export function offersApi(db: Db) {
     )
     .post(
       '/:id/:action',
-      zValidator('param', idParam.extend({ action: z.enum(['pause', 'resume', 'close']) })),
+      // `expire` and `checkin` are the scheduler's, in the poster's name — no route impersonates it.
+      zValidator(
+        'param',
+        idParam.extend({ action: z.enum(['pause', 'resume', 'close', 'repost']) }),
+      ),
       (c) => {
         const { id, action } = c.req.valid('param');
         return c.json(applyOfferAction(db, c.get('user').id, id, action));

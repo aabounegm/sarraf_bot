@@ -7,6 +7,7 @@ import { loadConfig } from '../../config.ts';
 import { openDb } from '../../db/index.ts';
 import { signInitData } from '../../http/auth.ts';
 import { createHttp } from '../../http/index.ts';
+import { applyOfferAction } from './service.ts';
 
 const config = loadConfig({
   BOT_TOKEN: '123:TEST',
@@ -83,4 +84,28 @@ test('offers API: create, list, filter, read, forbid, validate', async () => {
   });
   assert.equal(((await paused.json()) as { status: string }).status, 'paused');
   assert.equal((await app.request('/api/offers')).status, 401);
+});
+
+test('offers API: repost revives an expired offer, and only an expired one', async () => {
+  const db = openDb(':memory:');
+  const app = createHttp(config, db);
+  const created = await app.request('/api/offers', {
+    method: 'POST',
+    headers: as(alex),
+    body: JSON.stringify(body),
+  });
+  const offer = (await created.json()) as { id: number };
+  const repost = () =>
+    app.request(`/api/offers/${offer.id}/repost`, { method: 'POST', headers: as(alex) });
+
+  const tooEarly = await repost();
+  assert.equal(tooEarly.status, 409);
+  assert.deepEqual(await tooEarly.json(), { error: 'invalid-transition' });
+
+  applyOfferAction(db, alex.id, offer.id, 'expire'); // the scheduler's, never a route
+  const back = await repost();
+  assert.equal(back.status, 200);
+  const revived = (await back.json()) as { status: string; expiresAt: number };
+  assert.equal(revived.status, 'active');
+  assert.ok(revived.expiresAt > Date.now() + 23 * 3_600_000, 'a fresh 24h');
 });

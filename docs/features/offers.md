@@ -17,21 +17,21 @@ expires offers and checks in on the ones with no expiry. The bot's own side is d
 | Edit                   | `/offers/$offerId/edit`                                                                                         | [Edit] on a `/mine` card: the wizard, prefilled                      | post edited in place                                            |
 | Pause / Resume / Close | `OfferActions` on detail (own offers) and on My offers                                                          | buttons on a `/mine` card ([Close] asks first)                       | "● Paused" line / post deleted on close                         |
 | My offers              | `/my` `MyOffersPage` (Your requests section arrives with claims)                                                | `/mine`, [My offers] — a card per offer                              | —                                                               |
-| Expire / check in      | nothing to do: the board only ever lists `active` offers                                                        | the scheduler's DMs, with [Repost] / [Yes, still on] [Pause] [Close] | post deleted on expiry, "● Paused" after an unanswered check-in |
+| Expire / check in      | an expired offer keeps a [Repost] button, in My offers and on its detail page                                   | the scheduler's DMs, with [Repost] / [Yes, still on] [Pause] [Close] | post deleted on expiry, "● Paused" after an unanswered check-in |
 
 Deep links: `startapp=offer_<id>` → `/offers/<id>`, `startapp=take_<id>` → the take screen, and
 `?start=take_<id>` runs the bot's take wizard. Parsing: `parseStartParam` in `@sarraf/shared`.
 
 ## API — `apps/bot/src/features/offers/api.ts` (all behind `telegramAuth`)
 
-| Route                                       | Returns                              | Errors                                                                   |
-| ------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------ |
-| `GET /api/offers?give=USDT`                 | `OfferSummary[]`, newest first       | 400 bad currency                                                         |
-| `GET /api/offers/mine`                      | `OfferDetail[]` posted by the caller |                                                                          |
-| `POST /api/offers` body `OfferInput`        | 201 `OfferDetail`                    | 400 validation                                                           |
-| `GET /api/offers/:id`                       | `OfferDetail` (adds `claims[]`)      | 404 `offer-not-found`                                                    |
-| `PUT /api/offers/:id` body `OfferInput`     | `OfferDetail`                        | 403 `not-your-offer`, 409 `amount-below-committed`, 409 `offer-finished` |
-| `POST /api/offers/:id/{pause,resume,close}` | `OfferDetail`                        | 403, 409 `invalid-transition`                                            |
+| Route                                              | Returns                              | Errors                                                                   |
+| -------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------ |
+| `GET /api/offers?give=USDT`                        | `OfferSummary[]`, newest first       | 400 bad currency                                                         |
+| `GET /api/offers/mine`                             | `OfferDetail[]` posted by the caller |                                                                          |
+| `POST /api/offers` body `OfferInput`               | 201 `OfferDetail`                    | 400 validation                                                           |
+| `GET /api/offers/:id`                              | `OfferDetail` (adds `claims[]`)      | 404 `offer-not-found`                                                    |
+| `PUT /api/offers/:id` body `OfferInput`            | `OfferDetail`                        | 403 `not-your-offer`, 409 `amount-below-committed`, 409 `offer-finished` |
+| `POST /api/offers/:id/{pause,resume,close,repost}` | `OfferDetail`                        | 403, 409 `invalid-transition`                                            |
 
 Errors are `{ error: <code> }` via `AppError` (`apps/bot/src/lib/app-error.ts`); the mini app maps
 codes to `error-*` strings. Amounts in requests and responses are integer minor units.
@@ -44,10 +44,10 @@ codes to `error-*` strings. Amounts in requests and responses are integer minor 
   its questions.
 - `rate = null` forces `negotiable = true`.
 - Edit: new amount ≥ filled + reserved; not allowed once closed/completed/expired.
-- Transitions: pause (active→paused), resume (paused→active), close (active|paused→closed),
-  and three the scheduler and its DMs use, all in the poster's name and none of them on the API's
-  action list: expire (active|paused→expired), repost (expired→active, with a fresh 24h expiry),
-  checkin (active→active, "yes, still on").
+- Transitions: pause (active→paused), resume (paused→active), close (active|paused→closed) and
+  repost (expired→active, with a fresh 24h expiry) — those four are the API's action enum, and the
+  mini app's `OfferAction`. Two more belong to the scheduler and its DMs, in the poster's name but
+  on no route: expire (active|paused→expired) and checkin (active→active, "yes, still on").
 - Close and expire decline _pending_ claims **through `applyClaimAction`** (`decline` for a close,
   `timeout` for an expiry), so every taker is told; _confirmed_ ones survive (the deal may still
   happen). See [claims.md](claims.md).
