@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 
 import { createBot } from './bot/index.ts';
+import { registerCommands } from './bot/menu.ts';
 import { loadConfig } from './config.ts';
 import { openDb } from './db/index.ts';
 import { flushClaimNotifications, startClaimNotifications } from './features/claims/notify.ts';
@@ -23,6 +24,7 @@ startChannelSync({
   chat: config.OFFERS_CHANNEL,
   botUsername: bot.botInfo.username,
 });
+registerCommands(bot.api).catch((error) => console.error('setMyCommands failed', error));
 startClaimNotifications({ api: bot.api, db });
 startOfferNotifications({ api: bot.api, db });
 // Last, because its first tick runs immediately and can expire, decline and post right away.

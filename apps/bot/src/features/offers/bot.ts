@@ -9,6 +9,7 @@ import {
 import { Composer, InlineKeyboard } from 'grammy';
 
 import type { BotContext } from '../../bot/index.ts';
+import { MINE_COMMAND, NEW_COMMAND } from '../../bot/menu.ts';
 import { enterWizard } from '../../bot/wizard.ts';
 import type { Config } from '../../config.ts';
 import type { Db } from '../../db/index.ts';
@@ -27,11 +28,11 @@ const RUNNING: OfferStatus[] = ['active', 'paused'];
 export function offersBot(db: Db, config: Config) {
   const offers = new Composer<BotContext>();
 
-  offers.command('new', newOffer);
+  offers.command(NEW_COMMAND, newOffer);
   offers.filter(hears('new-offer'), newOffer);
 
   const mine = (ctx: BotContext) => sendMine(ctx, db, config);
-  offers.command('mine', mine);
+  offers.command(MINE_COMMAND, mine);
   offers.filter(hears('nav-my-offers'), mine);
 
   offers.callbackQuery(OFFER_CALLBACK, async (ctx) => {

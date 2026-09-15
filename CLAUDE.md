@@ -126,7 +126,8 @@ and [docs/features/bot.md](docs/features/bot.md). Working on **both** surfaces:
 create/browse/detail/edit/pause/resume/close/repost; take → confirm/decline → two-sided done (request DM
 with [Confirm] [Decline], re-rendered on every transition, stale buttons answer "Already closed");
 "Your requests"; contact gating; every mutation re-renders the channel post (verified against a real
-channel). In the chat: the reply keyboard, the `/new` and [Edit] wizards, `/mine` cards with their
+channel). In the chat: the reply keyboard, Telegram's "/" menu (`setMyCommands` at boot, the same
+list `/help` prints), the `/new` and [Edit] wizards, `/mine` cards with their
 buttons, `/board`, `/help`, `/cancel`, and the take wizard from `?start=take_<id>`, all calling the
 same services as the API. Dev-in-browser works end to end — `?user=2` in the URL gives a second
 identity, which is how the handshake is tested from one machine.
@@ -136,7 +137,7 @@ due — expire the offer (post deleted, poster gets [Repost]), time out a 12h-ol
 (taker told), ping the poster of a no-expiry offer every 48h ([Yes, still on] [Pause] [Close]) and
 pause it 24h later if nobody answers. Every job calls the same services the buttons do, so there is
 one code path per outcome; the due-work is `runDueWork(db, now)`, which is how the tests drive it.
-`pnpm check` is green (46 bot tests, 7 shared). Not yet exercised against a real chat: the claim DMs,
+`pnpm check` is green (47 bot tests, 7 shared). Not yet exercised against a real chat: the claim DMs,
 the wizards and the scheduler's DMs.
 
 Not yet done, suggested order (see architecture.md → Roadmap for detail):

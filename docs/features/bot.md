@@ -29,6 +29,20 @@ so they work in every locale. **Deviation from the spec:** `/start` sends _one_ 
 carries either a reply keyboard or an inline keyboard, not both, and the keyboard's first button
 already opens the mini app, so the separate inline "Open InnoExchange" button lives in `/board`.
 
+Telegram's "/" menu is filled at boot: `registerCommands` (`bot/menu.ts`) is called from `main.ts`
+after `bot.init()` and sends `setMyCommands` four times — the English default plus one call per
+locale, all scoped `all_private_chats`, because this is a private-chat product. It is fire and
+forget: a rejection is logged, and an empty "/" menu costs a tap, nothing more. `/start` is left
+out of it on purpose — the client offers it as a Start button before the chat begins, and after
+that the reply keyboard is the way back to the menu.
+
+The menu and `/help` are **one list**: `COMMANDS` in `bot/menu.ts`, built from the `*_COMMAND`
+constants the handlers themselves register with (`/new` and `/mine` are handled in
+`features/offers/bot.ts` and import theirs), and one `command-<name>` message per entry in the
+catalogue. `/help` interpolates the rendered lines as `{ $commands }`, so the two cannot drift, and
+a command is renamed in one constant plus its description in three locales. `bot/menu.test.ts`
+walks `COMMANDS` and fails if one of them has no description or no handler that answers.
+
 ## The wizards — `bot/wizard.ts` plus one file per flow
 
 `@grammyjs/conversations` v2, registered after the session plugin and given its own slice of the
@@ -124,8 +138,8 @@ a confirmed claim, and only `claimCard` shows one.
 - In a group chat the reply keyboard's `web_app` button is rejected by Telegram and `/start` fails
   with a logged error. The bot is a private-chat product; add a chat-type filter if it ever ends up
   in a group.
-- Commands are not registered with `setMyCommands`, so Telegram's "/" menu is empty; `/help` lists
-  them instead.
+- The "/" menu is registered once at boot, so a catalogue change reaches Telegram on the next
+  restart (and only for the locales the catalogue has — every other client sees the English one).
 
 ## Tests
 
@@ -134,4 +148,6 @@ conversation builds its own `Api`, so a transformer on `bot.api` would not see a
 plus `say`, `tap(label)` and `sent`. `features/offers/bot.test.ts` walks the whole `/new` wizard and
 checks the offer it wrote, the edit flow, `/mine`'s buttons acting on the right offer, a claim
 button tapped mid-wizard, and someone else's card refusing to answer;
-`features/claims/bot.test.ts` covers the handshake buttons and the `take_<id>` deep link.
+`features/claims/bot.test.ts` covers the handshake buttons and the `take_<id>` deep link;
+`bot/menu.test.ts` walks `COMMANDS` and checks each one has a description and a handler that
+answers.

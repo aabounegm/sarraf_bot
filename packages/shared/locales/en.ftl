@@ -172,13 +172,15 @@ offer-dm-autopaused = No answer, so #{ $id } is paused and its post says so. Res
 menu-browse = Browse offers
 menu-help = Help
 board-hint = The whole board, with filters and your history, lives in the mini app.
+command-new = post an offer, one question at a time
+command-mine = your offers and your requests, with the buttons to run them
+command-board = open the mini app
+command-help = this list of commands
+command-cancel = stop whatever we're in the middle of
 help =
     What I can do:
 
-    /new — post an offer, one question at a time
-    /mine — your offers and your requests, with the buttons to run them
-    /board — open the mini app
-    /cancel — stop whatever we're in the middle of
+    { $commands }
 
     I never hold money. I keep every offer in { $channel } up to date and introduce you to the other side once you both agree.
 mine-claim = { $name } · { $amount } via { $method } · { $status }
