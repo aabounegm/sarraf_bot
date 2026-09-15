@@ -10,6 +10,8 @@ import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import { type Db, type DbOrTx, schema } from '../../db/index.ts';
 import type { TelegramUser } from '../../http/auth.ts';
 import { AppError } from '../../lib/app-error.ts';
+// Circular by design, like service ↔ channel: closing an offer is also a claim event.
+import { applyClaimAction } from '../claims/service.ts';
 import { queueChannelSync } from './channel.ts';
 
 const { users, offers, claims } = schema;
@@ -95,19 +97,34 @@ export function updateOffer(
     }
     const { filled, reserved } = availability(row.giveAmount, claimsOf(tx, [offerId]));
     if (input.giveAmount < filled + reserved) throw new AppError(409, 'amount-below-committed');
-    tx.update(offers).set(toColumns(input)).where(eq(offers.id, offerId)).run();
+    // An edit is also an answer to the check-in — the poster is plainly still here.
+    tx.update(offers)
+      .set({ ...toColumns(input), checkInAt: null })
+      .where(eq(offers.id, offerId))
+      .run();
     return getOffer(tx, offerId);
   });
   queueChannelSync(offerId);
   return offer;
 }
 
-export type OfferAction = 'pause' | 'resume' | 'close';
+/**
+ * `expire` is the scheduler's, with the poster as the actor; `repost` brings the same offer (and
+ * its claim history) back with a fresh expiry, because its post was deleted, not its id. `checkin`
+ * is the 48h "yes, still on": no status change, only the `checkInAt` clearing every action does.
+ */
+export type OfferAction = 'pause' | 'resume' | 'close' | 'expire' | 'repost' | 'checkin';
 const TRANSITIONS: Record<OfferAction, { from: OfferStatus[]; to: OfferStatus }> = {
   pause: { from: ['active'], to: 'paused' },
   resume: { from: ['paused'], to: 'active' },
   close: { from: ['active', 'paused'], to: 'closed' },
+  expire: { from: ['active', 'paused'], to: 'expired' },
+  repost: { from: ['expired'], to: 'active' },
+  checkin: { from: ['active'], to: 'active' },
 };
+
+/** How long a reposted offer runs: the original duration is not stored, and [Edit] can change it. */
+const REPOST_HOURS = 24;
 
 export function applyOfferAction(
   db: Db,
@@ -115,22 +132,31 @@ export function applyOfferAction(
   offerId: number,
   action: OfferAction,
 ): OfferDetail {
-  const offer = db.transaction((tx) => {
+  const { offer, orphaned } = db.transaction((tx) => {
     const row = ownOffer(tx, userId, offerId);
     const t = TRANSITIONS[action];
     if (!t.from.includes(row.status)) throw new AppError(409, 'invalid-transition');
-    tx.update(offers).set({ status: t.to }).where(eq(offers.id, offerId)).run();
-    if (action === 'close') {
-      // Confirmed reservations survive a close (the deal may still happen); pending requests do not.
-      tx.update(claims)
-        .set({ status: 'declined' })
-        .where(and(eq(claims.offerId, offerId), eq(claims.status, 'pending')))
-        .run();
-    }
-    return getOffer(tx, offerId);
+    tx.update(offers)
+      .set({
+        status: t.to,
+        // Any action by the poster answers the check-in, and restarts its 48h clock (updatedAt).
+        checkInAt: null,
+        ...(action === 'repost' ? { expiresAt: hoursFromNow(REPOST_HOURS) } : {}),
+      })
+      .where(eq(offers.id, offerId))
+      .run();
+    // Confirmed reservations survive a close or an expiry (the deal may still happen); pending
+    // requests do not — and their takers are owed the news.
+    const ending = action === 'close' || action === 'expire';
+    return { offer: getOffer(tx, offerId, userId), orphaned: ending ? pendingIn(tx, offerId) : [] };
   });
+  // Through the claim service rather than one UPDATE, so every taker is told why their request
+  // ended. Outside the transaction because that is where the notification is queued.
+  for (const claimId of orphaned) {
+    applyClaimAction(db, userId, claimId, action === 'expire' ? 'timeout' : 'decline');
+  }
   queueChannelSync(offerId);
-  return offer;
+  return orphaned.length > 0 ? getOffer(db, offerId, userId) : offer;
 }
 
 /** `viewerId` decides whose handles are revealed; omit it for renderings with no viewer. */
@@ -190,9 +216,19 @@ function toColumns(input: OfferInput) {
   return {
     ...rest,
     negotiable: input.rate === null ? true : input.negotiable,
-    expiresAt: expiresInHours === null ? null : new Date(Date.now() + expiresInHours * 3_600_000),
+    expiresAt: expiresInHours === null ? null : hoursFromNow(expiresInHours),
   };
 }
+
+const hoursFromNow = (hours: number) => new Date(Date.now() + hours * 3_600_000);
+
+const pendingIn = (db: DbOrTx, offerId: number): number[] =>
+  db
+    .select({ id: claims.id })
+    .from(claims)
+    .where(and(eq(claims.offerId, offerId), eq(claims.status, 'pending')))
+    .all()
+    .map((c) => c.id);
 
 function ownOffer(db: DbOrTx, userId: number, offerId: number): OfferRow {
   const row = db.select().from(offers).where(eq(offers.id, offerId)).get();

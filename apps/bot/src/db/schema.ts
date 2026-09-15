@@ -38,6 +38,10 @@ export const offers = sqliteTable('offers', {
   negotiable: integer({ mode: 'boolean' }).notNull().default(false),
   note: text(),
   expiresAt: integer({ mode: 'timestamp_ms' }), // null = no expiry
+  // The 48h check-in on a no-expiry offer: when we asked "is this still on?" and are still
+  // waiting. null = not waiting; every poster action clears it, and `updatedAt` is then the
+  // "last heard from them" the next ping counts 48h from.
+  checkInAt: integer({ mode: 'timestamp_ms' }),
   status: text().$type<OfferStatus>().notNull().default('active'),
   channelMessageId: integer(), // the single channel post kept in sync with this offer
   ...timestamps,

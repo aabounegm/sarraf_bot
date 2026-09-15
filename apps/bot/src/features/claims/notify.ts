@@ -4,7 +4,7 @@ import { type Api, InlineKeyboard } from 'grammy';
 
 import { i18n } from '../../bot/i18n.ts';
 import { type Db, schema } from '../../db/index.ts';
-import { complains, createQueue, withRetry } from '../../lib/telegram-queue.ts';
+import { complains, createQueue, sendDm, withRetry } from '../../lib/telegram-queue.ts';
 import { type ClaimEvent, type Parties, amountOf, chatLink, claimCard, parties } from './card.ts';
 
 const { claims } = schema;
@@ -99,6 +99,8 @@ async function notifyOtherSide(p: Parties, event: ClaimEvent) {
       );
     case 'decline':
       return dm(to, t('claim-dm-declined', vars));
+    case 'timeout':
+      return dm(to, t('claim-dm-timeout', vars));
     case 'release':
       return dm(to, t('claim-dm-released', vars));
     case 'done':
@@ -114,11 +116,8 @@ async function notifyOtherSide(p: Parties, event: ClaimEvent) {
   }
 }
 
-/** Someone who blocked the bot still sees everything in the mini app; that is not an error here. */
 const dm = (to: UserRow, text: string, reply_markup?: InlineKeyboard) =>
-  withRetry(() => deps!.api.sendMessage(to.id, text, { reply_markup })).catch((err: unknown) => {
-    if (!complains(err, 'bot was blocked', 'chat not found', 'user is deactivated')) throw err;
-  });
+  sendDm(deps!.api, to.id, text, reply_markup);
 
 const translator =
   (locale: string) =>

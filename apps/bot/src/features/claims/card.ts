@@ -78,7 +78,7 @@ function posterCard(p: Parties, t: Translate, event?: ClaimEvent) {
       lines.push(t('claim-line-done'));
       break;
     case 'declined':
-      lines.push(t('claim-line-declined'));
+      lines.push(t(event?.action === 'timeout' ? 'claim-line-timeout' : 'claim-line-declined'));
       break;
     case 'cancelled':
       lines.push(

@@ -57,15 +57,20 @@ export function createClaim(db: Db, taker: TelegramUser, input: ClaimInput): Off
   return offer;
 }
 
-export type ClaimAction = 'confirm' | 'decline' | 'cancel' | 'release' | 'done';
+export type ClaimAction = 'confirm' | 'decline' | 'cancel' | 'release' | 'done' | 'timeout';
 
-/** Who may do what, and from which status. `release` and `done` are open to both sides. */
+/**
+ * Who may do what, and from which status. `release` and `done` are open to both sides.
+ * `timeout` is a decline nobody made — the scheduler's, in the poster's name, after 12h of
+ * silence or when the offer itself expired; the taker is told that rather than "declined".
+ */
 const TRANSITIONS: Record<ClaimAction, { from: ClaimStatus[]; by: 'poster' | 'taker' | 'both' }> = {
   confirm: { from: ['pending'], by: 'poster' },
   decline: { from: ['pending'], by: 'poster' },
   cancel: { from: ['pending'], by: 'taker' },
   release: { from: ['confirmed'], by: 'both' },
   done: { from: ['confirmed'], by: 'both' },
+  timeout: { from: ['pending'], by: 'poster' },
 };
 
 export function applyClaimAction(
@@ -132,7 +137,12 @@ export function listClaimsByTaker(db: DbOrTx, takerId: number): MyClaim[] {
 
 // --- internals ---
 
-const STATUS_FOR = { confirm: 'confirmed', decline: 'declined', cancel: 'cancelled' } as const;
+const STATUS_FOR = {
+  confirm: 'confirmed',
+  decline: 'declined',
+  cancel: 'cancelled',
+  timeout: 'declined',
+} as const;
 
 /** Two-sided: the claim only counts as done once both parties have said so. */
 function markDone(tx: DbOrTx, claim: ClaimRow, offer: OfferRow, role: 'poster' | 'taker') {
