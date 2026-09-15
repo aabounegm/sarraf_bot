@@ -258,6 +258,7 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-15 | The poster's confirmation reaches the taker as the taker's own claim card, not a sentence        | It is the message that has to carry the handle and `[Mark as done]`; the renderer already did both                     |
 | 2026-09-15 | The two sides of a claim are notified independently, and a refused button is dropped, not the DM | A taker was never told they had been confirmed: one message's failure must not cancel the other's                      |
 | 2026-09-15 | A claim carries both methods: `method` (pays with, from `getMethods`) and `receiveMethod`        | A taker picked how they pay but not how they are paid, so the poster had to ask; `giveMethods` is the offer's own list |
+| 2026-09-15 | `useMainButton` posts the same params twice                                                      | Android repaints the label only on the next update (`BotButtons.verifyDrawable` omits it); the twin call forces it     |
 
 ## 11. Roadmap (suggested order — dependency and value)
 

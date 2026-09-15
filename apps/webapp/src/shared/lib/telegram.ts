@@ -101,7 +101,10 @@ export function useMainButton(params: { text: string; onClick: () => void; enabl
   }, []);
   useEffect(() => {
     if (mocked || !mainButton.setParams.isAvailable()) return;
-    mainButton.setParams({ text, isEnabled: enabled });
+    const next = { text, isEnabled: enabled };
+    // Twice on purpose: Telegram Android paints the label one update late (architecture.md).
+    mainButton.setParams(next);
+    mainButton.setParams(next);
   }, [text, enabled]);
   useEffect(() => {
     if (mocked || !mainButton.onClick.isAvailable()) return;
