@@ -9,13 +9,13 @@ now runs in the scheduler.
 
 ## The same feature on each surface
 
-| Action          | Mini app                                                            | Bot chat                                                                   | Channel                             |
-| --------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------- |
-| Take            | `/offers/$offerId/take` `TakePage` (deep link `startapp=take_<id>`) | take wizard from `?start=take_<id>`, then the request DM to the poster     | "N requested" line; Take button     |
-| Confirm/Decline | `ClaimRow` under the offer in My offers                             | [Confirm] [Decline] on that DM                                             | reserved amount moves the status    |
-| Cancel/Release  | `ClaimCard` on the offer detail (taker), `ClaimRow` (poster)        | [Cancel request] / [Release] on either side's card; the other side is told | amount returns to available         |
-| Mark done       | `ClaimCard` / `ClaimRow`, two-sided                                 | [Mark as done], then [Done on my side too] / [Not yet]                     | post deleted once the offer is full |
-| Your requests   | `/my` → "Your requests" (`RequestRow`)                              | `/mine` — a taker card per open request, with its buttons                  | —                                   |
+| Action          | Mini app                                                            | Bot chat                                                                       | Channel                             |
+| --------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------- |
+| Take            | `/offers/$offerId/take` `TakePage` (deep link `startapp=take_<id>`) | take wizard from `?start=take_<id>`, then the request DM to the poster         | "N requested" line; Take button     |
+| Confirm/Decline | `ClaimRow` under the offer in My offers                             | `[Confirm]` `[Decline]` on that DM                                             | reserved amount moves the status    |
+| Cancel/Release  | `ClaimCard` on the offer detail (taker), `ClaimRow` (poster)        | `[Cancel request]` / `[Release]` on either side's card; the other side is told | amount returns to available         |
+| Mark done       | `ClaimCard` / `ClaimRow`, two-sided                                 | `[Mark as done]`, then `[Done on my side too]` / `[Not yet]`                   | post deleted once the offer is full |
+| Your requests   | `/my` → "Your requests" (`RequestRow`)                              | `/mine` — a taker card per open request, with its buttons                      | —                                   |
 
 ## API — `apps/bot/src/features/claims/api.ts` (all behind `telegramAuth`)
 
@@ -53,7 +53,7 @@ availability the other screens show. The mini app writes it straight into the de
 
 One DM per claim carries the poster's decision, stored as `claims.posterMessageId` and
 **re-rendered on every transition, whichever surface caused it** — confirming in the mini app also
-stops the bot's [Confirm] [Decline] from offering a second answer. The card shows the request, then
+stops the bot's `[Confirm]` `[Decline]` from offering a second answer. The card shows the request, then
 the state line (confirmed / declined / cancelled / released / waiting for the other side / done) and
 the buttons that still apply.
 

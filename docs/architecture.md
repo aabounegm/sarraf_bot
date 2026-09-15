@@ -237,18 +237,18 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-13 | Notifications render in the recipient's stored `users.locale`, not the actor's                   | There is no `ctx` when the mini app triggers the DM                                                               |
 | 2026-09-14 | Bot wizards use `@grammyjs/conversations` v2, state in the `sessions` table (`conversation-`)    | Owner's plan; the alternative was a hand-rolled step machine in the session                                       |
 | 2026-09-14 | A wizard halts on a command or a menu button and skips foreign callbacks, both with `next: true` | Otherwise a half-finished `/new` silently eats `/mine` and every claim button in the chat                         |
-| 2026-09-14 | `/start` carries the reply keyboard only; [Browse offers] is a `web_app` keyboard button         | One message carries one markup, and the keyboard already opens the app; the inline button moved to `/board`       |
+| 2026-09-14 | `/start` carries the reply keyboard only; `[Browse offers]` is a `web_app` keyboard button       | One message carries one markup, and the keyboard already opens the app; the inline button moved to `/board`       |
 | 2026-09-14 | One offer renderer for the channel post and the bot cards, parameterised by the translator       | They are the same text in two languages: the channel stays English, the chat uses `ctx.t`                         |
 | 2026-09-14 | The poster answers requests on the claim DM; `/mine` cards list them as text                     | That DM is already re-rendered from every surface — a second set of buttons would be a second truth               |
 | 2026-09-14 | `/mine` shows only active and paused offers and open requests                                    | The chat carries what you can act on; history is what the mini app is for                                         |
-| 2026-09-14 | [Close] in the chat asks before it closes (`offer:close` → `closenow` / `keep`)                  | Closing deletes the post and declines pending requests; the mini app confirms too                                 |
+| 2026-09-14 | `[Close]` in the chat asks before it closes (`offer:close` → `closenow` / `keep`)                | Closing deletes the post and declines pending requests; the mini app confirms too                                 |
 | 2026-09-14 | Wizard step buttons carry no id and live in `bot/wizard.ts`, not in `packages/shared`            | They last as long as one question, are read three lines from where they are built, and are bot-only               |
 | 2026-09-15 | `setMyCommands` at boot (private chats, one call per locale); `/help` prints the same list       | Two hand-kept lists of the same five commands would drift; `/start` stays out — the client already offers it      |
 | 2026-09-15 | The chat menu button is the mini app (English label), not the commands list                      | Commands stay on typing `/`; the profile's "Open App" is BotFather-only, not an API call                          |
 | 2026-09-14 | Tests record Telegram at the `fetch` level (`createBot(config, db, client)`)                     | A conversation builds its own `Api`, so a transformer on `bot.api` never sees what a wizard sends                 |
 | 2026-09-14 | The scheduler is `runDueWork(db, now)` plus a 60 s interval; its jobs go through the services    | The clock is an argument, so tests drive it; the services keep the post, the DMs and the rules in one place       |
 | 2026-09-14 | System actions (`expire`, `repost`, `checkin`, claim `timeout`) act as the poster, off the API   | The scheduler needs an actor and the poster owns the offer; no route may impersonate that                         |
-| 2026-09-14 | [Repost] revives the same offer with a fresh 24 h expiry rather than copying it to a new id      | Owner: the id is public and the claim history is real — only the post was deleted. The old duration is not stored |
+| 2026-09-14 | `[Repost]` revives the same offer with a fresh 24 h expiry rather than copying it to a new id    | Owner: the id is public and the claim history is real — only the post was deleted. The old duration is not stored |
 | 2026-09-14 | One nullable `offers.checkInAt` ("asked, waiting"); `updatedAt` is "last heard from the poster"  | Owner: one column, one migration. Every poster action clears it and so bumps `updatedAt`, restarting the 48 h     |
 | 2026-09-14 | Closing or expiring an offer declines its pending claims through `applyClaimAction`              | The bulk `UPDATE` it replaces left those takers waiting for an answer that had already been given                 |
 
@@ -262,12 +262,12 @@ Runbook: [deployment.md](deployment.md). The shape:
 3. ~~**Claims handshake**~~ — done 2026-09-13 on all three surfaces (`features/claims`: service, API,
    take screen, claim cards, request DMs with Confirm/Decline, two-sided Done, contact gating,
    idempotent stale buttons). See docs/features/claims.md.
-4. ~~**Bot parity**~~ — done 2026-09-14: reply keyboard, `/new` and [Edit] wizard, `/mine` with
+4. ~~**Bot parity**~~ — done 2026-09-14: reply keyboard, `/new` and `[Edit]` wizard, `/mine` with
    offer and request cards, `/board`, `/help`, `/cancel`, and the take wizard from
    `?start=take_<id>`, all on the same services as the Mini App. See
    [features/bot.md](features/bot.md).
 5. ~~**Scheduler**~~ — done 2026-09-14 (`scheduler.ts`, `features/offers/notify.ts`): expiry with a
-   one-tap [Repost], 48 h check-ins on no-expiry offers, auto-pause after 24 h of silence, 12 h
+   one-tap `[Repost]`, 48 h check-ins on no-expiry offers, auto-pause after 24 h of silence, 12 h
    pending auto-decline, and closing an offer now tells the takers it declined. See §6 and
    [features/offers.md](features/offers.md) § Scheduler.
 6. **Access & admin** — switch on `MEMBER_CHATS` gating, per-user rate limits, admin remove/ban.

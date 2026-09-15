@@ -79,7 +79,7 @@ Three rate states:
 Options on create: 6h / 12h / 24h / 48h / None. Channel posts are static text, so they show an **absolute time** ("expires today 20:00", "expires tomorrow 06:00", "expires Sat 14:00", "no expiry") in the community's timezone (Europe/Moscow). The mini app may show relative "5h left" because it renders live.
 
 - Expired offers: status → `expired`, channel post deleted, poster notified with a one-tap "Repost" button.
-- **No expiry** offers: a scheduled job DMs the poster every 48h ("Is #1042 still on?" [Yes] [Pause] [Close]); no answer within 24h ⇒ auto-pause (post edited to "Paused"). This mitigation is what makes "no expiry" acceptable — stale offers are the core problem the product solves.
+- **No expiry** offers: a scheduled job DMs the poster every 48h ("Is #1042 still on?" `[Yes]` `[Pause]` `[Close]`); no answer within 24h ⇒ auto-pause (post edited to "Paused"). This mitigation is what makes "no expiry" acceptable — stale offers are the core problem the product solves.
 
 ---
 
@@ -97,15 +97,15 @@ Use the Telegram WebApp SDK: `themeParams` → CSS vars, `MainButton` for the pr
 
 ### B. Bot chat (poster & taker both get these)
 
-- `/start` → welcome + persistent **reply keyboard**: [Browse offers] [New offer] / [My offers] [Help]; plus an inline `web_app` button "Open InnoExchange".
-- `/new` (or "New offer") → step-by-step with inline keyboards, one question per message: give currency → typed amount (validate number) → methods multi-select (buttons toggle "✓ TRC20", footer "Done (n)"; edit the same message via `editMessageReplyMarkup`) → get currency (excluding give) → methods → rate (typed number, or button "Negotiable, no rate"; if typed, ask "Fixed / Asking · negotiable") → expiry (6h/12h/24h/48h / No expiry) → notes (typed or Skip) → preview card with [Post to channel] / [Start over] [Cancel].
-- `/mine` → one card per offer with [Edit] [Pause] [Close]; requests listed similarly.
+- `/start` → welcome + persistent **reply keyboard**: `[Browse offers]` `[New offer]` / `[My offers]` `[Help]`; plus an inline `web_app` button "Open InnoExchange".
+- `/new` (or "New offer") → step-by-step with inline keyboards, one question per message: give currency → typed amount (validate number) → methods multi-select (buttons toggle "✓ TRC20", footer "Done (n)"; edit the same message via `editMessageReplyMarkup`) → get currency (excluding give) → methods → rate (typed number, or button "Negotiable, no rate"; if typed, ask "Fixed / Asking · negotiable") → expiry (6h/12h/24h/48h / No expiry) → notes (typed or Skip) → preview card with `[Post to channel]` / `[Start over]` `[Cancel]`.
+- `/mine` → one card per offer with `[Edit]` `[Pause]` `[Close]`; requests listed similarly.
 - `/board` → opens the mini app.
 - **Handshake notifications** (this is the core loop):
-  - to poster on new request: "Nour wants to take 100 USDT of your offer #1042 (100 USDT → 9,650 RUB via SBP). Is it still available?" [Confirm] [Decline]
-  - after Confirm the same message is edited to keep [Message Nour] / [Mark as done] [Release]; taker is notified "Alex confirmed — you can message @alex now" with a Message button.
+  - to poster on new request: "Nour wants to take 100 USDT of your offer #1042 (100 USDT → 9,650 RUB via SBP). Is it still available?" `[Confirm]` `[Decline]`
+  - after Confirm the same message is edited to keep `[Message Nour]` / `[Mark as done]` `[Release]`; taker is notified "Alex confirmed — you can message @alex now" with a Message button.
   - after Decline: message edited to "Declined — amount released"; taker notified.
-  - Done is two-sided: when one side taps Done the other gets "Nour marked #1042 (100 USDT) as done. Confirm on your side to update the post." [Done on my side too] [Not yet]. When both → claim `done`, remaining recalculated, channel updated, both get a summary.
+  - Done is two-sided: when one side taps Done the other gets "Nour marked #1042 (100 USDT) as done. Confirm on your side to update the post." `[Done on my side too]` `[Not yet]`. When both → claim `done`, remaining recalculated, channel updated, both get a summary.
   - Stale buttons must be idempotent: once a claim is done/declined/cancelled, taps on old Confirm/Decline/Done/Release answer the callback with "Already closed" and remove the keyboard. Every callback must be answered (`answerCallbackQuery`).
 - Contact gating: the taker's "Message poster" (and the poster's username/`tg://user?id=`) is only revealed **after confirmation**. This is the mechanism that stops people texting about gone offers.
 

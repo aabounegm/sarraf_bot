@@ -124,17 +124,17 @@ Rules of thumb:
 [docs/features/offers.md](docs/features/offers.md), [docs/features/claims.md](docs/features/claims.md)
 and [docs/features/bot.md](docs/features/bot.md). Working on **both** surfaces:
 create/browse/detail/edit/pause/resume/close/repost; take → confirm/decline → two-sided done (request DM
-with [Confirm] [Decline], re-rendered on every transition, stale buttons answer "Already closed");
+with `[Confirm]` `[Decline]`, re-rendered on every transition, stale buttons answer "Already closed");
 "Your requests"; contact gating; every mutation re-renders the channel post (verified against a real
 channel). In the chat: the reply keyboard, Telegram's "/" menu and the mini-app button next to the
-input (both set at boot by `registerMenu`; the menu is the same list `/help` prints), the `/new` and [Edit] wizards, `/mine` cards with their
+input (both set at boot by `registerMenu`; the menu is the same list `/help` prints), the `/new` and `[Edit]` wizards, `/mine` cards with their
 buttons, `/board`, `/help`, `/cancel`, and the take wizard from `?start=take_<id>`, all calling the
 same services as the API. Dev-in-browser works end to end — `?user=2` in the URL gives a second
 identity, which is how the handshake is tested from one machine.
 
 Nothing goes stale on its own any more: `scheduler.ts` ticks every 60s and asks the database what is
-due — expire the offer (post deleted, poster gets [Repost]), time out a 12h-old pending request
-(taker told), ping the poster of a no-expiry offer every 48h ([Yes, still on] [Pause] [Close]) and
+due — expire the offer (post deleted, poster gets `[Repost]`), time out a 12h-old pending request
+(taker told), ping the poster of a no-expiry offer every 48h (`[Yes, still on]` `[Pause]` `[Close]`) and
 pause it 24h later if nobody answers. Every job calls the same services the buttons do, so there is
 one code path per outcome; the due-work is `runDueWork(db, now)`, which is how the tests drive it.
 `pnpm check` is green (47 bot tests, 7 shared). Not yet exercised against a real chat: the claim DMs,
