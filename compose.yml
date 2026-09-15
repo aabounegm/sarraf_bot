@@ -12,4 +12,9 @@ services:
     ports:
       - '127.0.0.1:3000:3000'
     volumes:
-      - ./data:/data
+      - data:/data
+
+# Named, not a bind mount: a named volume inherits /data's node:node ownership from the image,
+# a host directory would come up root-owned and the container runs as node.
+volumes:
+  data:
