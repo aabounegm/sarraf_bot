@@ -9,10 +9,11 @@ import { isMocked, useBackButton, useMainButton } from '../lib/telegram.ts';
 export function Page({ back = false, children }: { back?: boolean; children: ReactNode }) {
   const router = useRouter();
   const { l10n } = useLocalization();
-  useBackButton(() => router.history.back(), back);
+  const canBack = back && router.history.canGoBack();
+  useBackButton(() => router.history.back(), canBack);
   return (
     <div style={{ paddingBottom: isMocked() ? 88 : 0 }}>
-      {back && isMocked() && (
+      {canBack && isMocked() && (
         <Button mode="plain" size="s" onClick={() => router.history.back()}>
           ← {l10n.getString('back')}
         </Button>
