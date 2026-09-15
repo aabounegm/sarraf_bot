@@ -89,6 +89,8 @@ pause = Pause
 resume = Resume
 edit = Edit
 close = Close
+repost = Repost
+checkin = Yes, still on
 close-confirm = Close this offer? Pending requests will be declined and the channel post removed.
 
 ## Channel
@@ -145,6 +147,7 @@ error-unknown-method = That payment method isn't on the offer.
 claim-request = { $name } wants to take { $amount } of your offer #{ $id } ({ $total } via { $method }). Is it still available?
 claim-line-confirmed = ✓ Confirmed — reserved for { $name }
 claim-line-declined = Declined — amount released
+claim-line-timeout = No answer — the request expired
 claim-line-cancelled = { $name } cancelled the request
 claim-line-released = { $name } released the reservation
 claim-line-waiting-you = { $name } marked it done · confirm on your side to update the post
@@ -152,12 +155,18 @@ claim-line-waiting-them = You marked it done · waiting for { $name }
 claim-line-done = Deal completed
 claim-dm-confirmed = { $name } confirmed — { $amount } is yours. You can message them now.
 claim-dm-declined = { $name } declined your request for { $amount }.
+claim-dm-timeout = No answer from { $name }, so your request for { $amount } has expired. Nothing is reserved.
 claim-dm-released = { $name } released the reservation for { $amount }.
 claim-dm-done = { $name } marked #{ $id } ({ $amount }) as done. Confirm on your side to update the post.
 claim-dm-completed = Deal completed: { $amount } with { $name }.
 done-too = Done on my side too
 not-yet = Not yet
 already-closed = Already closed
+
+## Bot — scheduler
+offer-dm-expired = #{ $id } has expired, so its channel post is gone. Repost it for another 24h?
+offer-dm-checkin = Is #{ $id } still on? If I don't hear back within 24h I'll pause it, so nobody messages you about an offer that's gone.
+offer-dm-autopaused = No answer, so #{ $id } is paused and its post says so. Resume it whenever you like.
 
 ## Bot — menu and commands
 menu-browse = Browse offers

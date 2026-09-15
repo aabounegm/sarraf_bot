@@ -90,6 +90,8 @@ pause = Пауза
 resume = Возобновить
 edit = Изменить
 close = Закрыть
+repost = Опубликовать снова
+checkin = Да, актуально
 close-confirm = Закрыть предложение? Ожидающие запросы будут отклонены, а пост в канале удалён.
 
 ## Channel
@@ -146,6 +148,7 @@ error-unknown-method = Такого способа оплаты нет в пре
 claim-request = { $name } хочет взять { $amount } из вашего предложения #{ $id } ({ $total } через { $method }). Оно ещё актуально?
 claim-line-confirmed = ✓ Подтверждено — зарезервировано за { $name }
 claim-line-declined = Отклонено — сумма освобождена
+claim-line-timeout = Без ответа — запрос истёк
 claim-line-cancelled = { $name } отменил(а) запрос
 claim-line-released = { $name } снял(а) бронь
 claim-line-waiting-you = { $name } отметил(а) выполненным · подтвердите со своей стороны, чтобы обновить пост
@@ -153,12 +156,18 @@ claim-line-waiting-them = Вы отметили выполненным · ждё
 claim-line-done = Сделка завершена
 claim-dm-confirmed = { $name } подтвердил(а) — { $amount } ваши. Теперь можно написать напрямую.
 claim-dm-declined = { $name } отклонил(а) ваш запрос на { $amount }.
+claim-dm-timeout = Ответа от { $name } не было, поэтому ваш запрос на { $amount } истёк. Ничего не зарезервировано.
 claim-dm-released = { $name } снял(а) бронь на { $amount }.
 claim-dm-done = { $name } отметил(а) #{ $id } ({ $amount }) как выполненное. Подтвердите со своей стороны, чтобы обновить пост.
 claim-dm-completed = Сделка завершена: { $amount } с { $name }.
 done-too = Выполнено и с моей стороны
 not-yet = Ещё нет
 already-closed = Уже закрыто
+
+## Bot — scheduler
+offer-dm-expired = Срок #{ $id } истёк, пост в канале удалён. Опубликовать снова ещё на 24 часа?
+offer-dm-checkin = #{ $id } ещё актуально? Если не получу ответ в течение 24 часов, поставлю его на паузу, чтобы вам не писали по неактуальному предложению.
+offer-dm-autopaused = Ответа не было, поэтому #{ $id } на паузе, и пост это показывает. Возобновите в любой момент.
 
 ## Bot — menu and commands
 menu-browse = Смотреть предложения

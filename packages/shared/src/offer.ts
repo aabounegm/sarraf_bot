@@ -127,10 +127,20 @@ export function parseClaimCallback(data: string): { button: ClaimButton; claimId
 }
 
 /**
- * Inline-button payloads on the bot's own offer cards (`/mine`), e.g. `offer:pause:42`.
- * `close` only asks; `closenow` closes and `keep` puts the card back, because closing is final.
+ * Inline-button payloads on the bot's own offer cards (`/mine`) and on the scheduler's DMs,
+ * e.g. `offer:pause:42`. `close` only asks; `closenow` closes and `keep` puts the card back,
+ * because closing is final. `repost` revives an expired offer, `checkin` is "yes, still on".
  */
-export const OFFER_BUTTONS = ['edit', 'pause', 'resume', 'close', 'closenow', 'keep'] as const;
+export const OFFER_BUTTONS = [
+  'edit',
+  'pause',
+  'resume',
+  'close',
+  'closenow',
+  'keep',
+  'repost',
+  'checkin',
+] as const;
 export type OfferButton = (typeof OFFER_BUTTONS)[number];
 
 export const offerCallback = (button: OfferButton, offerId: number) => `offer:${button}:${offerId}`;

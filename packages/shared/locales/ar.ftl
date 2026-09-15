@@ -92,6 +92,8 @@ pause = إيقاف مؤقت
 resume = استئناف
 edit = تعديل
 close = إغلاق
+repost = إعادة النشر
+checkin = نعم، ما زال متاحاً
 close-confirm = إغلاق هذا العرض؟ ستُرفض الطلبات المعلّقة ويُحذف منشور القناة.
 
 ## Channel
@@ -148,6 +150,7 @@ error-unknown-method = طريقة الدفع هذه ليست ضمن العرض.
 claim-request = يريد { $name } أخذ { $amount } من عرضك #{ $id } ({ $total } عبر { $method }). هل ما زال متاحاً؟
 claim-line-confirmed = ✓ مؤكد — محجوز لـ { $name }
 claim-line-declined = مرفوض — أُعيد المبلغ
+claim-line-timeout = بلا رد — انتهت صلاحية الطلب
 claim-line-cancelled = ألغى { $name } الطلب
 claim-line-released = ألغى { $name } الحجز
 claim-line-waiting-you = أنهى { $name } من جهته · أكّد من جهتك لتحديث المنشور
@@ -155,12 +158,18 @@ claim-line-waiting-them = أنهيت من جهتك · بانتظار { $name }
 claim-line-done = اكتملت الصفقة
 claim-dm-confirmed = أكّد { $name } — { $amount } لك. يمكنك مراسلته الآن.
 claim-dm-declined = رفض { $name } طلبك بـ { $amount }.
+claim-dm-timeout = لم يصل رد من { $name }، لذا انتهت صلاحية طلبك بـ { $amount }. لا شيء محجوز.
 claim-dm-released = ألغى { $name } الحجز بـ { $amount }.
 claim-dm-done = أنهى { $name } #{ $id } ({ $amount }) من جهته. أكّد من جهتك لتحديث المنشور.
 claim-dm-completed = اكتملت الصفقة: { $amount } مع { $name }.
 done-too = تم من جهتي أيضاً
 not-yet = ليس بعد
 already-closed = مغلق بالفعل
+
+## Bot — scheduler
+offer-dm-expired = انتهت صلاحية #{ $id }، وحُذف منشوره من القناة. أعيد نشره 24 ساعة أخرى؟
+offer-dm-checkin = هل ما زال #{ $id } متاحاً؟ إن لم يصلني رد خلال 24 ساعة سأوقفه مؤقتاً، حتى لا يراسلك أحد بشأن عرض انتهى.
+offer-dm-autopaused = لم يصل رد، لذا #{ $id } موقوف مؤقتاً والمنشور يوضّح ذلك. استأنفه متى شئت.
 
 ## Bot — menu and commands
 menu-browse = تصفّح العروض
