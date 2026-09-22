@@ -99,6 +99,7 @@ channel-title = { $name } отдаёт { $amount } { $give } за { $get }
 channel-methods = { $currency }: { $methods }
 channel-total = ≈ { $total } { $currency }
 awaiting-confirmation = запрошено { $amount }, ожидает подтверждения
+channel-post-expired = #{ $id } больше не доступно.
 
 ## Take / claims
 take = Взять

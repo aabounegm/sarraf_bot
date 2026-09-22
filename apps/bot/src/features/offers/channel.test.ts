@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import { type OfferInput, toMinor } from '@sarraf/shared';
 import { eq } from 'drizzle-orm';
-import type { Api } from 'grammy';
+import { type Api, GrammyError } from 'grammy';
 
 import { i18n } from '../../bot/i18n.ts';
 import { type Db, openDb, schema } from '../../db/index.ts';
@@ -44,6 +44,7 @@ function stubApi() {
     urls?: (string | undefined)[];
   }[] = [];
   let nextId = 100;
+  let tooOld = false;
   const api = {
     sendMessage: (_chat: string, text: string, options: Options) => {
       calls.push({ method: 'send', text, buttons: labels(options), urls: urls(options) });
@@ -55,17 +56,26 @@ function stubApi() {
     },
     deleteMessage: (_chat: string, messageId: number) => {
       calls.push({ method: 'delete', messageId });
-      return Promise.resolve(true);
+      return tooOld
+        ? Promise.reject(
+            new GrammyError(
+              "Call to 'deleteMessage' failed!",
+              { ok: false, error_code: 400, description: "Bad Request: message can't be deleted" },
+              'deleteMessage',
+              {},
+            ),
+          )
+        : Promise.resolve(true);
     },
   };
-  return { calls, api: api as unknown as Api };
+  return { calls, api: api as unknown as Api, refuseDelete: () => (tooOld = true) };
 }
 
-function wire(): { db: Db; calls: ReturnType<typeof stubApi>['calls'] } {
+function wire() {
   const db = openDb(':memory:');
-  const { api, calls } = stubApi();
+  const { api, ...rest } = stubApi();
   startChannelSync({ api, db, chat: '@innoexchange', botUsername: 'innoexchange_bot' });
-  return { db, calls };
+  return { db, ...rest };
 }
 
 const messageId = (db: Db, offerId: number) =>
@@ -164,6 +174,24 @@ test('publishes on create, edits in place on change, deletes when closed', async
   await flushChannelSync();
   assert.equal(calls.at(-1)?.method, 'delete');
   assert.equal(messageId(db, offer.id), null, 'the post is gone, so is its id');
+});
+
+test('a post Telegram refuses to delete is edited into a tombstone instead', async () => {
+  const { db, calls, refuseDelete } = wire();
+  const offer = createOffer(db, alex, input);
+  await flushChannelSync();
+  refuseDelete(); // past 48h, deleteMessage is refused for good
+
+  applyOfferAction(db, alex.id, offer.id, 'expire');
+  await flushChannelSync();
+
+  assert.deepEqual(
+    calls.map((c) => c.method),
+    ['send', 'delete', 'edit'],
+  );
+  assert.equal(calls.at(-1)?.text, `#${offer.id} is no longer available.`);
+  assert.deepEqual(calls.at(-1)?.buttons, [], 'and nothing left to tap');
+  assert.equal(messageId(db, offer.id), null, 'not ours any more either way');
 });
 
 test('coalesces a burst into one render', async () => {

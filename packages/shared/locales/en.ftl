@@ -98,6 +98,7 @@ channel-title = { $name } gives { $amount } { $give } for { $get }
 channel-methods = { $currency }: { $methods }
 channel-total = ≈ { $total } { $currency }
 awaiting-confirmation = { $amount } requested, awaiting confirmation
+channel-post-expired = #{ $id } is no longer available.
 
 ## Take / claims
 take = Take

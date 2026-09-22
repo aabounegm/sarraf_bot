@@ -260,6 +260,7 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-15 | A claim carries both methods: `method` (pays with, from `getMethods`) and `receiveMethod`        | A taker picked how they pay but not how they are paid, so the poster had to ask; `giveMethods` is the offer's own list |
 | 2026-09-15 | `useMainButton` posts the same params twice                                                      | Android repaints the label only on the next update (`BotButtons.verifyDrawable` omits it); the twin call forces it     |
 | 2026-09-15 | Telegram's back button only when `router.history.canGoBack()`                                    | A `startapp=take_<id>` deep link opens a sub-screen with no history, where the button was there and did nothing        |
+| 2026-09-22 | A channel post too old to delete (48 h) is edited into a "no longer available" line instead      | Seen in production: the delete was refused, nothing retries a finished offer, and the post stayed up for good          |
 
 ## 11. Roadmap (suggested order — dependency and value)
 

@@ -103,8 +103,10 @@ channel renders it with `i18n.t('en', …)`, the bot with `ctx.t`.
 `applyOfferAction`; `startChannelSync({ api, db, chat, botUsername })` wires it in `main.ts` after
 `bot.init()` (before that — tests, scripts — queueing is a no-op). One post per offer, id stored in
 `offers.channelMessageId`: published on the first sync, edited afterwards, deleted (and the id
-cleared) once the offer is closed / completed / expired. If the post was removed in the channel by
-hand, the next sync republishes it. Post body: title, rate + total, one methods line per side,
+cleared) once the offer is closed / completed / expired. Telegram refuses to delete a message more
+than 48 h old, so a post that outlived that is edited into `channel-post-expired` ("#1042 is no longer
+available.") with no buttons — editing its own message has no such limit. If the post was removed
+in the channel by hand, the next sync republishes it. Post body: title, rate + total, one methods line per side,
 italic note, `● Status — availability`, contention line, `#id · poster, N deals · expires …`
 (community timezone, English — see the decisions log). `flushChannelSync()` awaits the queue.
 

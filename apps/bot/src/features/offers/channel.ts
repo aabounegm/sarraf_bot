@@ -70,12 +70,7 @@ async function syncOne(offerId: number) {
     .get()!.id;
 
   if (GONE.includes(offer.status)) {
-    if (messageId === null) return;
-    try {
-      await withRetry(() => api.deleteMessage(chat, messageId));
-    } catch (err) {
-      if (!complains(err, 'message to delete not found')) throw err;
-    }
+    if (messageId !== null) await removePost(api, chat, messageId, offerId);
     setMessageId(db, offerId, null);
     return;
   }
@@ -100,6 +95,26 @@ async function syncOne(offerId: number) {
 
   const sent = await withRetry(() => api.sendMessage(chat, text, options));
   setMessageId(db, offerId, sent.message_id);
+}
+
+/**
+ * Telegram refuses to delete a message more than 48h old, so an offer that outlived its post
+ * cannot have it taken down. A bot editing its own message has no such limit: the post becomes a
+ * line saying the offer is gone, with no buttons, which is the next best thing to not being there.
+ */
+async function removePost(api: Api, chat: string, messageId: number, offerId: number) {
+  try {
+    await withRetry(() => api.deleteMessage(chat, messageId));
+  } catch (err) {
+    if (complains(err, 'message to delete not found')) return;
+    if (!complains(err, "message can't be deleted")) throw err;
+    await withRetry(() =>
+      api.editMessageText(chat, messageId, t('channel-post-expired', { id: offerId }), {
+        reply_markup: { inline_keyboard: [] }, // an omitted markup keeps the old one
+        link_preview_options: { is_disabled: true },
+      }),
+    );
+  }
 }
 
 const setMessageId = (db: Db, offerId: number, channelMessageId: number | null) =>

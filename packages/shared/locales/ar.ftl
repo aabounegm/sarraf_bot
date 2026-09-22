@@ -101,6 +101,7 @@ channel-title = { $name } يعطي { $amount } { $give } مقابل { $get }
 channel-methods = { $currency }: { $methods }
 channel-total = ≈ { $total } { $currency }
 awaiting-confirmation = { $amount } مطلوب، بانتظار التأكيد
+channel-post-expired = #{ $id } لم يعد متاحًا.
 
 ## Take / claims
 take = خذ
