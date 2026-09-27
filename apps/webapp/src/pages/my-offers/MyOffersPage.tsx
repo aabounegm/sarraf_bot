@@ -1,6 +1,6 @@
 import { useLocalization } from '@fluent/react';
 import { useNavigate } from '@tanstack/react-router';
-import { List, Placeholder, Section, SegmentedControl, Spinner } from '@telegram-apps/telegram-ui';
+import { List, Placeholder, Section, Spinner } from '@telegram-apps/telegram-ui';
 
 import { useMyClaims } from '../../entities/claim/api.ts';
 import { isOpen } from '../../entities/claim/model.ts';
@@ -9,6 +9,7 @@ import { amount } from '../../entities/offer/format.ts';
 import { ClaimRow } from '../../features/manage-claim/ClaimRow.tsx';
 import { OfferActions } from '../../features/manage-offer/OfferActions.tsx';
 import { Page, PrimaryButton } from '../../shared/ui/Page.tsx';
+import { NavTabs } from '../../widgets/nav/NavTabs.tsx';
 import { OfferCard } from '../../widgets/offer-card/OfferCard.tsx';
 import { RequestRow } from './RequestRow.tsx';
 
@@ -22,14 +23,7 @@ export function MyOffersPage() {
 
   return (
     <Page>
-      <div style={{ padding: 8 }}>
-        <SegmentedControl>
-          <SegmentedControl.Item onClick={() => navigate({ to: '/' })}>
-            {l10n.getString('nav-offers')}
-          </SegmentedControl.Item>
-          <SegmentedControl.Item selected>{l10n.getString('nav-my-offers')}</SegmentedControl.Item>
-        </SegmentedControl>
-      </div>
+      <NavTabs active="/my" />
       <Section header={l10n.getString('posted-by-you')}>
         {offers.isPending && (
           <Placeholder>

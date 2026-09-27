@@ -47,6 +47,12 @@ Claim {
   status   'pending' | 'confirmed' | 'done' | 'declined' | 'cancelled'
   takerDone bool, posterDone bool     // status becomes 'done' only when both are true
 }
+Alert {                               // "DM me when someone posts USDT → RUB"
+  id, user (Telegram user)
+  give   { cur, methods: string[] }   // what a matching offer gives; [] = any method
+  get    { cur, methods: string[] }   // …and what it wants for it; get.cur ≠ give.cur
+  paused bool                         // silent, but kept
+}                                     // one alert per (user, give.cur, get.cur)
 ```
 
 Currencies and methods (methods depend on the currency; make this a config table, not code):
@@ -98,12 +104,15 @@ Use the Telegram WebApp SDK: `themeParams` → CSS vars, `MainButton` for the pr
 4. **Create / Edit**. Sections: YOU GIVE (currency chips, code + symbol, amount input, method multi-select labelled "Network" for USDT else "Payment method"), YOU GET (currency chips **excluding the give currency**, methods), RATE / ASKING RATE · OPTIONAL (`1 USDT = ___ RUB`, Negotiable toggle with hint, live total), EXPIRES AFTER (6h/12h/24h/48h/None + hint sentence), NOTES · OPTIONAL (≤200, counter). MainButton **POST OFFER** / **SAVE CHANGES**, enabled only when amount > 0, ≥1 method each side, and (negotiable OR rate > 0). Edit constraint (not in prototype, must implement): amount cannot be set below `filled + reserved`.
 5. **My offers**. POSTED BY YOU: each offer card with claims underneath (Karim · 200 AED via Cash · "asks if available" → **Confirm** / Decline; confirmed → **Done**), footer actions Pause/Resume · Edit · Close. YOUR REQUESTS: rows linking to the offer with status ("waiting for confirmation", "confirmed — message Alex", "completed", "declined").
 
+6. **Alerts**. Third tab of the segmented control. YOUR ALERTS: a row per pair ("USDT → RUB", methods or "Any method") with a switch (on = active) and a red trash button; tapping the row itself loads it into the form below, where the main button then reads **UPDATE THIS PAIR**. Below it the add form: currency chips for each side (the get side excludes the give currency) with an optional method multi-select under each ("Leave empty for any method"). MainButton: **+ ADD A PAIR** / **UPDATE THIS PAIR**; saving a pair you already watch replaces its methods.
+
 ### B. Bot chat (poster & taker both get these)
 
 - `/start` → welcome + persistent **reply keyboard**: `[Browse offers]` `[New offer]` / `[My offers]` `[Help]`; plus an inline `web_app` button "Open InnoExchange".
 - `/new` (or "New offer") → step-by-step with inline keyboards, one question per message: give currency → typed amount (validate number) → methods multi-select (buttons toggle "✓ TRC20", footer "Done (n)"; edit the same message via `editMessageReplyMarkup`) → get currency (excluding give) → methods → rate (typed number, or button "Negotiable, no rate"; if typed, ask "Fixed / Asking · negotiable") → expiry (6h/12h/24h/48h / No expiry) → notes (typed or Skip) → preview card with `[Post to channel]` / `[Start over]` `[Cancel]`.
 - `/mine` → one card per offer with `[Edit]` `[Pause]` `[Close]`; requests listed similarly.
-- `/board` → opens the mini app.
+- `/board` → the board in the chat: one active offer per screen in one message, paged and filtered in place.
+- `/alerts` → the pairs you are watching, a card each with `[Pause]`/`[Resume]` `[Delete]`, plus `[+ Add a pair]` → a short wizard (give currency → its methods or `[Any method]` → get currency → its methods). When a new offer matches, the watcher gets a DM with the offer as the channel renders it, `[Take]` and `[Pause these alerts]`.
 - **Handshake notifications** (this is the core loop):
   - to poster on new request: "Nour wants to take 100 USDT of your offer #1042 (100 USDT → 9,650 RUB via SBP). Is it still available?" + "Nour wants the USDT via TRC20" `[Confirm]` `[Decline]`
   - after Confirm the same message is edited to keep `[Message Nour]` / `[Mark as done]` `[Release]`; taker is notified "Alex confirmed — you can message @alex now" with a Message button.

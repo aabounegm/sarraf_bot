@@ -126,6 +126,17 @@ export function harness(db: Db = openDb(':memory:')) {
           message_id: call!.messageId!,
           date: 0,
           chat: { id: user.id, type: 'private', first_name: user.first_name },
+          // Telegram sends the buttons along with the message, and a handler may read them to
+          // rebuild the keyboard it is about to replace.
+          reply_markup: {
+            inline_keyboard: [
+              call!.buttons.map((b) =>
+                b.data === undefined
+                  ? { text: b.text, url: b.url ?? '' }
+                  : { text: b.text, callback_data: b.data },
+              ),
+            ],
+          },
         },
       },
     });

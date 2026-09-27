@@ -235,3 +235,29 @@ take-preview = Вы запрашиваете { $amount } из #{ $id } на { $r
 take-rate = Какой курс вы предлагаете? Отправьте число — 1 { $base } = … { $quote }.
 take-rate-theirs = Их курс ({ $rate })
 take-rate-later = Договоримся в чате
+
+## Alerts
+nav-alerts = Оповещения
+alert-pair = { $give } → { $get }
+alert-list = Напишу вам, как только появится подходящее предложение.
+alert-none = Оповещений пока нет. Добавьте пару — напишу, когда её кто-то опубликует.
+alert-add = + Добавить пару
+alert-update = Обновить эту пару
+alert-any-method = Любой способ
+alert-methods-hint = Оставьте пустым, чтобы подходил любой способ.
+alert-give = Какую валюту вы хотите получить?
+alert-get = А чем будете платить?
+alert-give-methods = Только если отправляют { $currency } через:
+alert-get-methods = Только если принимают { $currency } через:
+alert-added = Готово. Напишу, когда кто-то опубликует { $give } → { $get }.
+alert-pause = Приостановить эти оповещения
+alert-paused = Оповещения по { $give } → { $get } приостановлены.
+alert-resumed = Оповещения по { $give } → { $get } снова включены.
+alert-deleted = Оповещения по { $give } → { $get } удалены.
+alert-dm-match = Новое предложение по { $give } → { $get } — паре, которую вы отслеживаете:
+alert-duplicate-hint = По одной паре — одно оповещение. Нажмите на пару выше, чтобы изменить её здесь.
+delete = Удалить
+command-alerts = валютные пары, о которых вам написать
+error-alert-not-found = Такого оповещения нет.
+error-not-your-alert = Это не ваше оповещение.
+error-same-currency = Выберите две разные валюты.

@@ -20,6 +20,7 @@ const MENU_KEYS = ['menu-browse', 'new-offer', 'nav-my-offers', 'menu-help'] as 
 export const NEW_COMMAND = 'new';
 export const MINE_COMMAND = 'mine';
 export const BOARD_COMMAND = 'board';
+export const ALERTS_COMMAND = 'alerts';
 const HELP_COMMAND = 'help';
 /** The one command that already says "cancelled" itself, so a wizard leaving on it stays quiet. */
 export const CANCEL_COMMAND = 'cancel';
@@ -33,6 +34,7 @@ export const COMMANDS = [
   NEW_COMMAND,
   MINE_COMMAND,
   BOARD_COMMAND,
+  ALERTS_COMMAND,
   HELP_COMMAND,
   CANCEL_COMMAND,
 ] as const;

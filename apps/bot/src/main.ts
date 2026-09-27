@@ -4,6 +4,7 @@ import { createBot } from './bot/index.ts';
 import { registerMenu } from './bot/menu.ts';
 import { loadConfig } from './config.ts';
 import { openDb } from './db/index.ts';
+import { flushAlertNotifications, startAlertNotifications } from './features/alerts/notify.ts';
 import { flushClaimNotifications, startClaimNotifications } from './features/claims/notify.ts';
 import { flushChannelSync, startChannelSync } from './features/offers/channel.ts';
 import { flushOfferNotifications, startOfferNotifications } from './features/offers/notify.ts';
@@ -29,6 +30,7 @@ registerMenu(bot.api, config.PUBLIC_URL).catch((error) =>
 );
 startClaimNotifications({ api: bot.api, db });
 startOfferNotifications({ api: bot.api, db });
+startAlertNotifications({ api: bot.api, db });
 // Last, because its first tick runs immediately and can expire, decline and post right away.
 const scheduler = startScheduler(db);
 
@@ -53,6 +55,11 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const)
     clearInterval(scheduler);
     await bot.stop();
     // Let the last post and DM land instead of drifting until the next change.
-    await Promise.all([flushChannelSync(), flushClaimNotifications(), flushOfferNotifications()]);
+    await Promise.all([
+      flushChannelSync(),
+      flushClaimNotifications(),
+      flushOfferNotifications(),
+      flushAlertNotifications(),
+    ]);
     process.exit(0);
   });

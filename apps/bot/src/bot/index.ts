@@ -8,6 +8,8 @@ import { type ApiClientOptions, Bot, type Context, type SessionFlavor, session }
 
 import type { Config } from '../config.ts';
 import type { Db } from '../db/index.ts';
+import { alertsBot } from '../features/alerts/bot.ts';
+import { ALERT_WIZARD, alertWizard } from '../features/alerts/wizard.ts';
 import { claimsBot } from '../features/claims/bot.ts';
 import { TAKE_WIZARD, takeWizard } from '../features/claims/wizard.ts';
 import { boardBot } from '../features/offers/board.ts';
@@ -46,10 +48,12 @@ export function createBot(config: Config, db: Db, client?: ApiClientOptions) {
   // Registered before anything that enters them: `enter` only knows conversations it has seen.
   bot.use(createConversation(offerWizard(db, config), OFFER_WIZARD));
   bot.use(createConversation(takeWizard(db), TAKE_WIZARD));
+  bot.use(createConversation(alertWizard(db), ALERT_WIZARD));
 
   bot.use(claimsBot(db));
   bot.use(offersBot(db, config));
   bot.use(boardBot(db, config));
+  bot.use(alertsBot(db));
   bot.use(menuBot(config));
 
   // Every callback is answered, including a button whose wizard or message is long gone.

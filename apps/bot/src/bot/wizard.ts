@@ -63,13 +63,18 @@ export async function choose(
   }
 }
 
-/** The multi-select from the spec: buttons toggle "✓ TRC20" by editing their own message. */
+/**
+ * The multi-select from the spec: buttons toggle "✓ TRC20" by editing their own message.
+ * `emptyLabel` makes picking nothing an answer (an alert's methods: none = any), and is what the
+ * finishing button says while the selection is empty; without it that button refuses to finish.
+ */
 export async function chooseMany(
   conversation: Wizard,
   ctx: WizardContext,
   question: string,
   choices: Choice[],
   preset: readonly string[] = [],
+  emptyLabel?: string,
 ): Promise<string[]> {
   const picked = new Set(preset.filter((v) => choices.some((c) => c.value === v)));
   const markup = () =>
@@ -83,7 +88,7 @@ export async function chooseMany(
           {
             label:
               picked.size === 0
-                ? ctx.t('wizard-pick-one')
+                ? (emptyLabel ?? ctx.t('wizard-pick-one'))
                 : ctx.t('wizard-done-count', { count: picked.size }),
             value: DONE,
           },
@@ -99,8 +104,12 @@ export async function chooseMany(
       continue;
     }
     if (reply.value === DONE) {
-      if (picked.size === 0) continue; // the button says "Pick at least one"
-      await settle(ctx, message, `${question}\n✓ ${[...picked].join(', ')}`);
+      if (picked.size === 0 && emptyLabel === undefined) continue; // the button says "Pick at least one"
+      await settle(
+        ctx,
+        message,
+        `${question}\n✓ ${picked.size === 0 ? emptyLabel : [...picked].join(', ')}`,
+      );
       return [...picked];
     }
     if (!choices.some((c) => c.value === reply.value)) continue;

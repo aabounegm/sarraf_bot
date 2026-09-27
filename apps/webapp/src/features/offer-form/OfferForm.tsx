@@ -1,77 +1,19 @@
 import { useLocalization } from '@fluent/react';
 import {
   CURRENCY_CODES,
-  type Currency,
   EXPIRY_OPTIONS_HOURS,
   NOTE_MAX_LENGTH,
   convert,
-  currencyLabel,
   formatAmount,
   rateBase,
   toMinor,
 } from '@sarraf/shared';
-import {
-  Cell,
-  Chip,
-  Input,
-  Multiselectable,
-  Section,
-  Switch,
-  Textarea,
-} from '@telegram-apps/telegram-ui';
+import { Cell, Chip, Input, Section, Switch, Textarea } from '@telegram-apps/telegram-ui';
 
+import { Chips, MethodList } from '../../shared/ui/Pickers.tsx';
 import type { useOfferForm } from './useOfferForm.ts';
 
 type Form = ReturnType<typeof useOfferForm>;
-
-function Chips<T extends Currency>({
-  options,
-  value,
-  onChange,
-}: {
-  options: readonly T[];
-  value: T;
-  onChange: (v: T) => void;
-}) {
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '8px 16px' }}>
-      {options.map((o) => (
-        <Chip
-          key={o}
-          mode={o === value ? 'mono' : 'outline'}
-          onClick={() => onChange(o)}
-          style={{ whiteSpace: 'nowrap' }}
-        >
-          {currencyLabel(o)}
-        </Chip>
-      ))}
-    </div>
-  );
-}
-
-function MethodList({
-  options,
-  selected,
-  onToggle,
-}: {
-  options: readonly string[];
-  selected: string[];
-  onToggle: (m: string) => void;
-}) {
-  return (
-    <>
-      {options.map((m) => (
-        <Cell
-          key={m}
-          Component="label"
-          before={<Multiselectable checked={selected.includes(m)} onChange={() => onToggle(m)} />}
-        >
-          {m}
-        </Cell>
-      ))}
-    </>
-  );
-}
 
 export function OfferForm({ form }: { form: Form }) {
   const { l10n } = useLocalization();

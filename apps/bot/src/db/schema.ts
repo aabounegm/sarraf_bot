@@ -1,5 +1,5 @@
 import type { ClaimStatus, Currency, OfferStatus } from '@sarraf/shared';
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // Column names are camelCase as written here (Drizzle quotes identifiers, so this is portable).
 // Money columns are integer minor units (see @sarraf/shared money.ts). Timestamps are epoch ms.
@@ -66,6 +66,27 @@ export const claims = sqliteTable('claims', {
   posterMessageId: integer(),
   ...timestamps,
 });
+
+/**
+ * "DM me when someone posts USDT → RUB": one row per pair a user watches. Empty method lists mean
+ * any method. One row per (user, pair) — saving the same pair again edits the methods on it.
+ */
+export const alerts = sqliteTable(
+  'alerts',
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    userId: integer()
+      .notNull()
+      .references(() => users.id),
+    giveCurrency: text().$type<Currency>().notNull(), // what a matching offer gives
+    getCurrency: text().$type<Currency>().notNull(), // …and what it wants for it
+    giveMethods: text({ mode: 'json' }).$type<string[]>().notNull(),
+    getMethods: text({ mode: 'json' }).$type<string[]>().notNull(),
+    paused: integer({ mode: 'boolean' }).notNull().default(false),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('alerts_user_pair').on(t.userId, t.giveCurrency, t.getCurrency)],
+);
 
 /** Key-value store owned by grammY's session plugin (and conversations later). */
 export const sessions = sqliteTable('sessions', {

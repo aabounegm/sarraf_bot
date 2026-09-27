@@ -93,7 +93,7 @@ UIs and would constrain each to the other's weakest feature. Instead drift is pr
 
 ## 5. Data model and conventions
 
-Schema: `apps/bot/src/db/schema.ts` (users, offers, claims, sessions). Mirrors the spec's
+Schema: `apps/bot/src/db/schema.ts` (users, offers, claims, alerts, sessions). Mirrors the spec's
 domain model. Conventions:
 
 - **Money:** integer minor units (×100) in the DB, API, bot and Mini App state. Decimal only at
@@ -262,6 +262,9 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-15 | Telegram's back button only when `router.history.canGoBack()`                                    | A `startapp=take_<id>` deep link opens a sub-screen with no history, where the button was there and did nothing                                                       |
 | 2026-09-22 | A channel post too old to delete (48 h) is edited into a "no longer available" line instead      | Seen in production: the delete was refused, nothing retries a finished offer, and the post stayed up for good                                                         |
 | 2026-09-27 | A claim may carry its own `rate` (negotiable offers only); the offer's rate is never touched     | A counter-rate on the request lets the poster decline a hopeless one on sight; `claim.rate ?? offer.rate` is the total                                                |
+| 2026-09-27 | Alerts are one row per (user, pair); saving a pair you watch edits it instead of adding one      | The pair is what a person names ("USD for RUB"), so it is the identity on both surfaces — and it keeps the list, the DM and the wizard free of duplicates             |
+| 2026-09-27 | An alert DM goes out on **create** only, not on resume or repost                                 | Creation is when the channel gets a post; a poster toggling pause would otherwise re-DM everyone watching the pair                                                    |
+| 2026-09-27 | Alert payment methods are optional on both sides (empty = any), and matching lives in `shared`   | Most people care about the pair, not the rails; `matchesAlert` is the one rule the DM and the mini app's copy both describe                                           |
 | 2026-09-27 | Currency symbols (`CURRENCY_SYMBOLS`, `currencyLabel`) in pickers and filters only, as Unicode   | The eye finds `RUB (₽)` faster than `RUB`; amounts keep the code alone, so no "$ 200 USD". SVG rejected: nothing to draw the bot's keyboard with, and `₮` covers USDT |
 
 ## 11. Roadmap (suggested order — dependency and value)
@@ -284,6 +287,9 @@ Runbook: [deployment.md](deployment.md). The shape:
    [features/offers.md](features/offers.md) § Scheduler.
 6. **Access & admin** — switch on `MEMBER_CHATS` gating, per-user rate limits, admin remove/ban.
 7. ~~**Deploy**~~ — Dockerfile, compose, webhook mode, runbook: done 2026-09-13 (first real deploy pending).
+8. ~~**Alerts on a currency pair**~~ — done 2026-09-27 (`features/alerts`, `pages/alerts`): a standing
+   subscription per pair with optional methods, pausable, and a DM with `[Take]` when a matching offer
+   is posted. See [features/alerts.md](features/alerts.md).
 
 ### Possible future features (no date, no order)
 
@@ -303,9 +309,6 @@ Not scheduled and not promised — written down so they stop being re-invented e
   `from: ['expired']`): a `[Post again]` on a finished offer opens the create wizard / create screen
   prefilled from it, so the poster edits amount or rate before publishing and gets a new `#id`. The
   old offer stays closed and its channel post stays deleted.
-- **Watch a pair.** "DM me when someone posts USD→RUB": with a thin market Browse is usually empty
-  and the only recourse is watching the channel. A `watches` table keyed by (user, give, get) and one
-  DM from `features/offers/notify.ts` when a matching offer goes active.
 - **The going rate while creating.** Under the rate question, the median rate of active offers on the
   same pair, so the poster stops guessing. One query, no new table; hide the line when there is
   nothing to average.

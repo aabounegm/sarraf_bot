@@ -7,6 +7,7 @@ import {
   createRouter,
 } from '@tanstack/react-router';
 
+import { AlertsPage } from '../pages/alerts/AlertsPage.tsx';
 import { BrowsePage } from '../pages/browse/BrowsePage.tsx';
 import { MyOffersPage } from '../pages/my-offers/MyOffersPage.tsx';
 import { EditOfferPage, NewOfferPage } from '../pages/offer-form/OfferFormPage.tsx';
@@ -18,6 +19,7 @@ const root = createRootRoute({ component: Outlet });
 const routeTree = root.addChildren([
   createRoute({ getParentRoute: () => root, path: '/', component: BrowsePage }),
   createRoute({ getParentRoute: () => root, path: '/my', component: MyOffersPage }),
+  createRoute({ getParentRoute: () => root, path: '/alerts', component: AlertsPage }),
   createRoute({ getParentRoute: () => root, path: '/offers/new', component: NewOfferPage }),
   createRoute({ getParentRoute: () => root, path: '/offers/$offerId', component: OfferPage }),
   createRoute({

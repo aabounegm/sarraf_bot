@@ -39,6 +39,7 @@ packages/shared/      isomorphic — NO Node/DOM APIs. Imported by both apps as 
   src/currencies.ts     currency + payment-method config, rate-base order, expiry options
   src/money.ts          amounts are integer minor units (×100); convert(); formatAmount()
   src/offer.ts          Offer/Claim statuses; availability() = the one definition of "available"
+  src/alert.ts          AlertInput + matchesAlert(): a standing subscription to one currency pair
   locales/{en,ru,ar}.ftl Fluent catalog shared by bot and mini app (parity test in src/locales.test.ts)
 
 apps/bot/src/         one Node process: bot + API + DB
@@ -54,18 +55,21 @@ apps/bot/src/         one Node process: bot + API + DB
   lib/telegram-queue.ts serialised fire-and-forget sends + 429 retry, shared by channel.ts and notify.ts
   features/offers/      service.ts (rules) · api.ts · bot.ts (/new /mine) · board.ts (/board) · wizard.ts · render.ts · channel.ts · notify.ts (the scheduler's DMs) · *.test.ts — the pattern for every feature
   features/claims/      the take → confirm → done handshake: service.ts · api.ts · bot.ts (buttons) · card.ts · wizard.ts (take) · notify.ts (DMs)
+  features/alerts/      "DM me when someone posts USDT → RUB": service.ts (+ matching) · api.ts · bot.ts (/alerts) · wizard.ts · notify.ts
 
 apps/webapp/src/      Feature-Sliced Design: app/ pages/ widgets/ features/ entities/ shared/
   app/main.tsx          initTelegram() → createLocalization() → createAppRouter(start_param) → <App>
   app/router.tsx        code-based TanStack routes; memory history seeded from start_param
   pages/*               one folder per screen; compose widgets/features; no data logic
   widgets/offer-card    list row used by Browse and My offers
+  widgets/nav           NavTabs: the three top-level screens (Offers · My offers · Alerts)
   features/*            offer-form (state → OfferInput), manage-offer (pause/resume/close), manage-claim (ClaimCard/ClaimRow)
-  entities/{offer,claim} model.ts (types via InferResponseType), api.ts (Query hooks), format.ts (localized text)
+  entities/{offer,claim,alert} model.ts (types via InferResponseType), api.ts (Query hooks), format.ts (localized text)
   shared/api/client.ts  hc<Api>('/api') + unwrap() → ApiError(code)
   shared/lib/telegram.ts initTelegram (mocks env in dev), useMainButton/useBackButton, haptic, confirmDialog
   shared/lib/i18n.ts    Fluent bundle from @sarraf/shared/locales
   shared/ui/Page.tsx    Page (back button) and PrimaryButton (native main button or fallback)
+  shared/ui/Pickers.tsx currency Chips and MethodList, shared by the offer form and the alert form
 ```
 
 Rules of thumb:
@@ -151,7 +155,8 @@ Not yet done, suggested order (see architecture.md → Roadmap for detail):
 3. ~~Claims handshake~~ ✔ (both surfaces)
 4. ~~Bot parity~~ ✔ — wizards via `@grammyjs/conversations`, `/mine`, reply keyboard, take deep link
 5. ~~Scheduled jobs~~ ✔ — `scheduler.ts` + `features/offers/notify.ts`
-6. Access gating switch (`MEMBER_CHATS` via `getChatMember`), admin commands
-7. ~~Deployment~~ ✔ — Dockerfile, compose.yml, webhook mode, docs/deployment.md (first real deploy pending)
+6. ~~Alerts on a currency pair~~ ✔ (2026-09-27, both surfaces) — see docs/features/alerts.md
+7. Access gating switch (`MEMBER_CHATS` via `getChatMember`), admin commands
+8. ~~Deployment~~ ✔ — Dockerfile, compose.yml, webhook mode, docs/deployment.md (first real deploy pending)
 
 Resolved questions and their answers are at the end of docs/architecture.md.

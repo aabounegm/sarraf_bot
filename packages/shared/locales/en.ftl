@@ -234,3 +234,29 @@ take-preview = You're asking for { $amount } of #{ $id } via { $receive }, payin
 take-rate = What rate are you proposing? Send a number — 1 { $base } = … { $quote }.
 take-rate-theirs = Their rate ({ $rate })
 take-rate-later = Agree in chat
+
+## Alerts
+nav-alerts = Alerts
+alert-pair = { $give } → { $get }
+alert-list = You'll get a message when a matching offer is posted.
+alert-none = No alerts yet. Add a pair and I'll message you when someone posts it.
+alert-add = + Add a pair
+alert-update = Update this pair
+alert-any-method = Any method
+alert-methods-hint = Leave empty for any method.
+alert-give = Which currency do you want to receive?
+alert-get = And what would you pay with?
+alert-give-methods = Only when they send { $currency } via:
+alert-get-methods = Only when they accept { $currency } via:
+alert-added = Done. I'll message you when someone posts { $give } → { $get }.
+alert-pause = Pause these alerts
+alert-paused = Alerts for { $give } → { $get } paused.
+alert-resumed = Alerts for { $give } → { $get } back on.
+alert-deleted = Alerts for { $give } → { $get } removed.
+alert-dm-match = New offer on { $give } → { $get }, the pair you're watching:
+alert-duplicate-hint = One alert per pair. Tap one above to load it here and change it.
+delete = Delete
+command-alerts = the currency pairs you want a message about
+error-alert-not-found = That alert doesn't exist.
+error-not-your-alert = That isn't your alert.
+error-same-currency = Pick two different currencies.

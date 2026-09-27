@@ -40,12 +40,18 @@ export function withoutUserLinks(markup: InlineKeyboard | undefined) {
 }
 
 /** Someone who blocked the bot still sees everything in the mini app; that is not an error here. */
-export const sendDm = (api: Api, to: number, text: string, reply_markup?: InlineKeyboard) =>
-  withRetry(() => api.sendMessage(to, text, { reply_markup }))
+export const sendDm = (
+  api: Api,
+  to: number,
+  text: string,
+  reply_markup?: InlineKeyboard,
+  other?: { parse_mode?: 'HTML'; link_preview_options?: { is_disabled: boolean } },
+) =>
+  withRetry(() => api.sendMessage(to, text, { ...other, reply_markup }))
     .catch((err: unknown) => {
       if (!reply_markup || !complains(err, 'BUTTON_')) throw err;
       return withRetry(() =>
-        api.sendMessage(to, text, { reply_markup: withoutUserLinks(reply_markup) }),
+        api.sendMessage(to, text, { ...other, reply_markup: withoutUserLinks(reply_markup) }),
       );
     })
     .catch((err: unknown) => {

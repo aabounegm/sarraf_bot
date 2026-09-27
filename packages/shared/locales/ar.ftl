@@ -238,3 +238,29 @@ take-preview = تطلب { $amount } من #{ $id } على { $receive }، وتدف
 take-rate = ما السعر الذي تقترحه؟ أرسل رقماً — 1 { $base } = … { $quote }.
 take-rate-theirs = سعرهم ({ $rate })
 take-rate-later = نتفق في المحادثة
+
+## Alerts
+nav-alerts = التنبيهات
+alert-pair = { $give } → { $get }
+alert-list = سأراسلك حالما يُنشر عرض مطابق.
+alert-none = لا تنبيهات بعد. أضف زوجاً وسأراسلك عندما ينشره أحدهم.
+alert-add = + أضف زوجاً
+alert-update = حدّث هذا الزوج
+alert-any-method = أي وسيلة
+alert-methods-hint = اتركه فارغاً لتقبل أي وسيلة.
+alert-give = ما العملة التي تريد استلامها؟
+alert-get = وبماذا ستدفع؟
+alert-give-methods = فقط إذا أرسلوا { $currency } عبر:
+alert-get-methods = فقط إذا قبلوا { $currency } عبر:
+alert-added = تم. سأراسلك عندما ينشر أحدهم { $give } → { $get }.
+alert-pause = أوقف هذه التنبيهات
+alert-paused = تنبيهات { $give } → { $get } موقوفة.
+alert-resumed = تنبيهات { $give } → { $get } عادت.
+alert-deleted = حُذفت تنبيهات { $give } → { $get }.
+alert-dm-match = عرض جديد على { $give } → { $get }، الزوج الذي تتابعه:
+alert-duplicate-hint = تنبيه واحد لكل زوج. اضغط زوجاً أعلاه ليظهر هنا فتعدّله.
+delete = احذف
+command-alerts = أزواج العملات التي تريد رسالة عنها
+error-alert-not-found = هذا التنبيه غير موجود.
+error-not-your-alert = هذا ليس تنبيهك.
+error-same-currency = اختر عملتين مختلفتين.

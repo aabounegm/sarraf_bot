@@ -10,6 +10,7 @@ import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import { type Db, type DbOrTx, schema } from '../../db/index.ts';
 import type { TelegramUser } from '../../http/auth.ts';
 import { AppError } from '../../lib/app-error.ts';
+import { notifyMatchingAlerts } from '../alerts/notify.ts';
 // Circular by design, like service ↔ channel: closing an offer is also a claim event.
 import { applyClaimAction } from '../claims/service.ts';
 import { queueChannelSync } from './channel.ts';
@@ -84,6 +85,7 @@ export function createOffer(db: Db, poster: TelegramUser, input: OfferInput): Of
     return getOffer(tx, row.id);
   });
   queueChannelSync(offer.id);
+  notifyMatchingAlerts(offer.id);
   return offer;
 }
 

@@ -1,18 +1,12 @@
 import { useLocalization } from '@fluent/react';
 import { CURRENCY_CODES, type Currency, currencyLabel } from '@sarraf/shared';
 import { useNavigate } from '@tanstack/react-router';
-import {
-  Chip,
-  List,
-  Placeholder,
-  Section,
-  SegmentedControl,
-  Spinner,
-} from '@telegram-apps/telegram-ui';
+import { Chip, List, Placeholder, Section, Spinner } from '@telegram-apps/telegram-ui';
 import { useState } from 'react';
 
 import { useOffers } from '../../entities/offer/api.ts';
 import { Page, PrimaryButton } from '../../shared/ui/Page.tsx';
+import { NavTabs } from '../../widgets/nav/NavTabs.tsx';
 import { OfferCard } from '../../widgets/offer-card/OfferCard.tsx';
 
 export function BrowsePage() {
@@ -23,14 +17,7 @@ export function BrowsePage() {
 
   return (
     <Page>
-      <div style={{ padding: 8 }}>
-        <SegmentedControl>
-          <SegmentedControl.Item selected>{l10n.getString('nav-offers')}</SegmentedControl.Item>
-          <SegmentedControl.Item onClick={() => navigate({ to: '/my' })}>
-            {l10n.getString('nav-my-offers')}
-          </SegmentedControl.Item>
-        </SegmentedControl>
-      </div>
+      <NavTabs active="/" />
       <Section header={l10n.getString('looking-for')} footer={l10n.getString('requested-hint')}>
         <div style={{ display: 'flex', gap: 8, padding: '8px 16px', overflowX: 'auto' }}>
           <Chip mode={give === undefined ? 'mono' : 'outline'} onClick={() => setGive(undefined)}>
