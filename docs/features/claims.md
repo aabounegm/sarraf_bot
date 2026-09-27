@@ -10,23 +10,28 @@ runs in the scheduler. The poster's confirmation now reaches the taker as their 
 — see § Bot. A take now also asks which of the offer's own methods the taker wants the money on
 (`claims.receiveMethod`). Not yet verified against a real chat.
 
+**2026-09-27:** on a **negotiable** offer the take also asks the rate the taker is proposing
+(`claims.rate`, optional, both surfaces). It is shown to the poster on the request DM and on
+`ClaimRow` with the total it produces, so a rate nobody would accept is declined on sight instead of
+in a DM. It never touches the offer's own rate — confirming the request is what accepts it.
+
 ## The same feature on each surface
 
-| Action          | Mini app                                                                                           | Bot chat                                                                                         | Channel                             |
-| --------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------- |
-| Take            | `/offers/$offerId/take` `TakePage` (deep link `startapp=take_<id>`): amount, pay with, receive via | take wizard from `?start=take_<id>`: the same three questions, then the request DM to the poster | "N requested" line; Take button     |
-| Confirm/Decline | `ClaimRow` under the offer in My offers                                                            | `[Confirm]` `[Decline]` on that DM                                                               | reserved amount moves the status    |
-| Cancel/Release  | `ClaimCard` on the offer detail (taker), `ClaimRow` (poster)                                       | `[Cancel request]` / `[Release]` on either side's card; the other side is told                   | amount returns to available         |
-| Mark done       | `ClaimCard` / `ClaimRow`, two-sided                                                                | `[Mark as done]`, then `[Done on my side too]` / `[Not yet]`                                     | post deleted once the offer is full |
-| Your requests   | `/my` → "Your requests" (`RequestRow`)                                                             | `/mine` — a taker card per open request, with its buttons                                        | —                                   |
+| Action          | Mini app                                                                                                                   | Bot chat                                                                                   | Channel                             |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------- |
+| Take            | `/offers/$offerId/take` `TakePage` (deep link `startapp=take_<id>`): amount, pay with, receive via, rate (negotiable only) | take wizard from `?start=take_<id>`: the same questions, then the request DM to the poster | "N requested" line; Take button     |
+| Confirm/Decline | `ClaimRow` under the offer in My offers                                                                                    | `[Confirm]` `[Decline]` on that DM                                                         | reserved amount moves the status    |
+| Cancel/Release  | `ClaimCard` on the offer detail (taker), `ClaimRow` (poster)                                                               | `[Cancel request]` / `[Release]` on either side's card; the other side is told             | amount returns to available         |
+| Mark done       | `ClaimCard` / `ClaimRow`, two-sided                                                                                        | `[Mark as done]`, then `[Done on my side too]` / `[Not yet]`                               | post deleted once the offer is full |
+| Your requests   | `/my` → "Your requests" (`RequestRow`)                                                                                     | `/mine` — a taker card per open request, with its buttons                                  | —                                   |
 
 ## API — `apps/bot/src/features/claims/api.ts` (all behind `telegramAuth`)
 
-| Route                                                        | Returns                             | Errors                                                                                                                        |
-| ------------------------------------------------------------ | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/claims/mine`                                       | `MyClaim[]`, newest first           |                                                                                                                               |
-| `POST /api/claims` body `ClaimInput`                         | 201 `OfferDetail`                   | 400 validation / `unknown-method`, 403 `own-offer`, 404, 409 `offer-unavailable` `already-claimed` `amount-exceeds-remaining` |
-| `POST /api/claims/:id/{confirm,decline,cancel,release,done}` | `OfferDetail` of the affected offer | 403 `not-your-claim`, 404 `claim-not-found`, 409 `invalid-transition` `amount-exceeds-remaining`                              |
+| Route                                                        | Returns                             | Errors                                                                                                                                                |
+| ------------------------------------------------------------ | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/claims/mine`                                       | `MyClaim[]`, newest first           |                                                                                                                                                       |
+| `POST /api/claims` body `ClaimInput`                         | 201 `OfferDetail`                   | 400 validation / `unknown-method` / `rate-not-negotiable`, 403 `own-offer`, 404, 409 `offer-unavailable` `already-claimed` `amount-exceeds-remaining` |
+| `POST /api/claims/:id/{confirm,decline,cancel,release,done}` | `OfferDetail` of the affected offer | 403 `not-your-claim`, 404 `claim-not-found`, 409 `invalid-transition` `amount-exceeds-remaining`                                                      |
 
 Every route answers with the **offer**, so one response refreshes both the claim and the
 availability the other screens show. The mini app writes it straight into the detail cache.
@@ -38,6 +43,11 @@ availability the other screens show. The mini app writes it straight into the de
   may hold only one open (pending or confirmed) claim per offer at a time. Both methods are asked
   on both surfaces — the poster's card then says where to send without asking in chat
   (`claim-receive-method`), and the taker's says it back (`your-request`).
+- A claim may carry its own `rate`, but **only on a negotiable offer** (`rate-not-negotiable`
+  otherwise — a fixed rate is the whole point of not marking the offer negotiable). It is a
+  proposal, not a change: the offer's rate stays as it is, and wherever this claim's total is shown
+  it is computed at `claim.rate ?? offer.rate` (`totalText` in the bot, `totalOf` in the mini app)
+  with a `claim-rate` line spelling the rate out.
 - **Pending reserves nothing** — `availability()` in `@sarraf/shared` is the one definition.
   Confirming is what moves the amount, so confirm re-checks `amount ≤ remaining` (two pending
   requests can both fit individually but not together — the second gets `amount-exceeds-remaining`).
@@ -111,7 +121,9 @@ handshake, and a taker who blocked the bot is not an error.
 `pages/my-offers/RequestRow.tsx`.
 
 `ClaimRow` prints both of the claim's methods (`claim-methods`: what the taker pays with, what they
-want the money on), which is the mini app's half of what the request DM tells the poster.
+want the money on) and, when there is one, the rate the taker proposed (`claim-rate`) — the mini
+app's half of what the request DM tells the poster. `ClaimCard` leaves the rate line out: it is the
+taker's own number and their total already reflects it.
 
 A "Message X" button only appears when the other side has a Telegram username: a mini app can open
 `t.me/<username>` but not a `tg://user?id=` link. The bot's own notifications reach those users by id.

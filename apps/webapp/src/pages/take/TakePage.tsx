@@ -1,5 +1,5 @@
 import { useLocalization } from '@fluent/react';
-import { fromMinor, toMinor } from '@sarraf/shared';
+import { fromMinor, ratePair, toMinor } from '@sarraf/shared';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import {
   Cell,
@@ -37,16 +37,22 @@ function TakeForm({ offer }: { offer: OfferDetail }) {
   const [value, setValue] = useState('');
   const [method, setMethod] = useState(offer.getMethods[0] ?? '');
   const [receiveMethod, setReceiveMethod] = useState(offer.giveMethods[0] ?? '');
+  const [rateText, setRateText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const pair = ratePair(offer.giveCurrency, offer.getCurrency);
   const remaining = offer.availability.remaining;
   const minor = toMinor(Number(value.replace(',', '.')));
   const tooMuch = minor > remaining;
-  const valid = minor > 0 && !tooMuch && method !== '' && receiveMethod !== '';
+  // Only a negotiable offer takes a counter-rate; blank means "your rate, or we agree in chat".
+  const typedRate = Number(rateText.replace(',', '.'));
+  const rate = offer.negotiable && typedRate > 0 ? typedRate : null;
+  const badRate = rateText.trim() !== '' && rate === null;
+  const valid = minor > 0 && !tooMuch && !badRate && method !== '' && receiveMethod !== '';
 
   const submit = () =>
     create.mutate(
-      { offerId: offer.id, amount: minor, method, receiveMethod },
+      { offerId: offer.id, amount: minor, method, receiveMethod, rate },
       {
         onSuccess: () => {
           haptic('success');
@@ -98,8 +104,28 @@ function TakeForm({ offer }: { offer: OfferDetail }) {
             </Chip>
           ))}
         </div>
-        {minor > 0 && <Cell readOnly subtitle={payText(l10n, offer, minor)} />}
+        {minor > 0 && <Cell readOnly subtitle={payText(l10n, offer, minor, rate ?? offer.rate)} />}
       </Section>
+
+      {/* A rate the poster can accept or refuse on sight, instead of haggling in a DM. */}
+      {offer.negotiable && (
+        <Section
+          header={l10n.getString('your-rate-section')}
+          footer={l10n.getString(badRate ? 'wizard-bad-rate' : 'your-rate-hint')}
+        >
+          <Input
+            className="form-input"
+            type="text"
+            inputMode="decimal"
+            placeholder={offer.rate === null ? '' : String(offer.rate)}
+            value={rateText}
+            status={badRate ? 'error' : undefined}
+            onChange={(e) => setRateText(e.target.value)}
+            before={`1 ${pair.base} =`}
+            after={pair.quote}
+          />
+        </Section>
+      )}
 
       <Section header={l10n.getString('pay-with')}>
         {offer.getMethods.map((m) => (

@@ -220,6 +220,35 @@ test('the channel Take button, bot half: /start take_<id> runs the take wizard',
   );
 });
 
+test('on a negotiable offer the wizard asks for a rate, and the poster sees the one proposed', async () => {
+  const { db, say, tap, sent } = chat();
+  const offer = createOffer(db, alex, { ...input, negotiable: true });
+
+  await say(nour, `/start ${startParam('take', offer.id)}`);
+  await say(nour, '50');
+  await tap(nour, 'SBP');
+  await tap(nour, 'TRC20');
+  const question = sent(nour.id).at(-1)!;
+  assert.match(question.text!, /What rate are you proposing\? Send a number — 1 USDT = … RUB\./);
+  assert.deepEqual(
+    question.buttons.map((b) => b.text),
+    ['Their rate (96.5)', 'Cancel'],
+    'and a way to just accept the asking rate',
+  );
+
+  await say(nour, '90');
+  const preview = sent(nour.id).at(-1)!;
+  assert.match(preview.text!, /paying 4,500 RUB via SBP/, 'the total is at the proposed rate');
+  assert.match(preview.text!, /At 1 USDT = 90 RUB/);
+
+  await tap(nour, 'Request 50 USDT');
+  await flushClaimNotifications();
+  assert.equal(getOffer(db, offer.id).claims[0]?.rate, 90);
+  const request = sent(alex.id).at(-1)!;
+  assert.match(request.text!, /4,500 RUB via SBP/, 'the poster is told what they would get');
+  assert.match(request.text!, /At 1 USDT = 90 RUB/, 'and can decline the rate without a chat');
+});
+
 test('the take wizard refuses an offer that is not takeable', async () => {
   const { db, say, sent } = chat();
   const offer = createOffer(db, alex, input);

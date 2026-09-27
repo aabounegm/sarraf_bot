@@ -7,7 +7,7 @@ import {
   EXPIRY_OPTIONS_HOURS,
   NOTE_MAX_LENGTH,
   isCurrency,
-  rateBase,
+  ratePair,
 } from './currencies.ts';
 import type { Minor } from './money.ts';
 
@@ -75,12 +75,14 @@ export type OfferInput = z.infer<typeof OfferInput>;
 /**
  * What a taker submits to request part (or all) of an offer: `method` is what they pay with (one
  * of `offer.getMethods`), `receiveMethod` is what they take it on (one of `offer.giveMethods`).
+ * `rate` is a counter-rate, allowed only on a negotiable offer; null = the offer's rate stands.
  */
 export const ClaimInput = z.object({
   offerId: z.number().int().positive(),
   amount: z.number().int().positive(),
   method: z.string().min(1),
   receiveMethod: z.string().min(1),
+  rate: z.number().positive().nullable().optional(),
 });
 export type ClaimInput = z.infer<typeof ClaimInput>;
 
@@ -96,9 +98,11 @@ export function rateInfo(o: {
   negotiable: boolean;
 }): RateInfo {
   if (o.rate === null) return { kind: 'open' };
-  const base = rateBase(o.giveCurrency, o.getCurrency);
-  const quote = base === o.giveCurrency ? o.getCurrency : o.giveCurrency;
-  return { kind: o.negotiable ? 'asking' : 'fixed', base, quote, rate: o.rate };
+  return {
+    kind: o.negotiable ? 'asking' : 'fixed',
+    ...ratePair(o.giveCurrency, o.getCurrency),
+    rate: o.rate,
+  };
 }
 
 /** Deep links: `t.me/<bot>/<app>?startapp=offer_1042` and `?start=take_1042` on the bot side. */

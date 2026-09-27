@@ -58,6 +58,7 @@ export const claims = sqliteTable('claims', {
   amount: integer().notNull(), // in offer.giveCurrency
   method: text().notNull(), // what the taker pays with: one of offer.getMethods
   receiveMethod: text().notNull().default(''), // what they take it on: one of offer.giveMethods
+  rate: real(), // the taker's counter-rate on a negotiable offer; null = the offer's rate stands
   status: text().$type<ClaimStatus>().notNull().default('pending'),
   takerDone: integer({ mode: 'boolean' }).notNull().default(false),
   posterDone: integer({ mode: 'boolean' }).notNull().default(false),

@@ -119,6 +119,9 @@ claim-yours = { $name } confirmed — it's yours
 contact-handle = Message them at @{ $handle }
 claim-you-marked-done = You marked done · waiting for { $name }
 claim-finished = Deal completed
+your-rate-section = Your rate · optional
+your-rate-hint = Leave it blank to accept their rate, or propose one so they can answer without a chat.
+claim-rate = At 1 { $base } = { $rate } { $quote }
 your-request = Your request: { $amount } to { $receive } · { $total } via { $method }
 claim-methods = Pays { $total } via { $method } · wants the { $currency } via { $receive }
 cancel-request = Cancel request
@@ -146,6 +149,7 @@ error-not-your-offer = That isn't your offer.
 error-not-your-claim = That isn't your request.
 error-offer-finished = That offer is already finished.
 error-unknown-method = That payment method isn't on the offer.
+error-rate-not-negotiable = That offer's rate is fixed, so you can't propose another one.
 
 ## Bot — claim notifications
 claim-request = { $name } wants to take { $amount } of your offer #{ $id } ({ $total } via { $method }). Is it still available?
@@ -226,3 +230,6 @@ wizard-use-buttons = Use the buttons above, or /cancel.
 ## Bot — take wizard
 take-amount-hint = { $max }. Send a number, or:
 take-preview = You're asking for { $amount } of #{ $id } via { $receive }, paying { $total } via { $method }.
+take-rate = What rate are you proposing? Send a number — 1 { $base } = … { $quote }.
+take-rate-theirs = Their rate ({ $rate })
+take-rate-later = Agree in chat

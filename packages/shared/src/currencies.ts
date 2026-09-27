@@ -20,6 +20,12 @@ export function rateBase(a: Currency, b: Currency): Currency {
   return CURRENCY_CODES.indexOf(a) <= CURRENCY_CODES.indexOf(b) ? a : b;
 }
 
+/** A rate is always quoted "1 base = rate quote", whichever way the offer is written. */
+export function ratePair(give: Currency, get: Currency): { base: Currency; quote: Currency } {
+  const base = rateBase(give, get);
+  return { base, quote: base === give ? get : give };
+}
+
 /** Expiry choices in hours. `null` (no expiry) is also allowed; the bot then pings the poster every 48h. */
 export const EXPIRY_OPTIONS_HOURS = [6, 12, 24, 48] as const;
 export type ExpiryHours = (typeof EXPIRY_OPTIONS_HOURS)[number];

@@ -1,4 +1,4 @@
-import { ClaimInput, formatAmount, toMinor } from '@sarraf/shared';
+import { ClaimInput, formatAmount, ratePair, toMinor } from '@sarraf/shared';
 
 import {
   type Wizard,
@@ -10,15 +10,16 @@ import {
 } from '../../bot/wizard.ts';
 import type { Db } from '../../db/index.ts';
 import { errorCode, errorText } from '../../lib/app-error.ts';
-import { renderOffer, totalText } from '../offers/render.ts';
+import { claimRateText, renderOffer, totalText } from '../offers/render.ts';
 import { type OfferDetail, getOffer } from '../offers/service.ts';
 import { createClaim } from './service.ts';
 
 export const TAKE_WIZARD = 'take-wizard';
 
 /**
- * Amount → pay with → receive on → confirm, from `/start take_1042`. The mini app's take screen
- * asks the same four things and both end in `createClaim`, which is what notifies the poster and
+ * Amount → pay with → receive on → (rate, if the offer is negotiable) → confirm, from
+ * `/start take_1042`. The mini app's take screen asks the same things and both end in
+ * `createClaim`, which is what notifies the poster and
  * updates the channel post. The poster's @username is not shown here: it is earned by a confirmed
  * claim.
  */
@@ -64,6 +65,8 @@ export function takeWizard(db: Db) {
       chunk(choicesOf(offer.giveMethods), 2),
     );
 
+    const rate = offer.negotiable ? await rateOf(conversation, ctx, offer) : null;
+
     const name = offer.poster.firstName;
     // The only other button is [Cancel], which bot/wizard.ts halts on.
     await choose(
@@ -74,9 +77,10 @@ export function takeWizard(db: Db) {
           amount: `${formatAmount(amount)} ${offer.giveCurrency}`,
           id: offer.id,
           receive: receiveMethod,
-          total: totalText(offer, amount, ctx.t),
+          total: totalText(offer, amount, ctx.t, rate ?? offer.rate),
           method,
         }),
+        ...(rate === null ? [] : [claimRateText(offer, rate, ctx.t)]),
         ctx.t('take-hint', { name }),
       ].join('\n'),
       [
@@ -91,7 +95,7 @@ export function takeWizard(db: Db) {
       ],
     );
     const result = await conversation.external(() =>
-      submit(db, user, { offerId: offer.id, amount, method, receiveMethod }),
+      submit(db, user, { offerId: offer.id, amount, method, receiveMethod, rate }),
     );
     if ('error' in result) return void ctx.reply(errorText(ctx, result.error, { amount: max }));
     await ctx.reply(
@@ -101,6 +105,37 @@ export function takeWizard(db: Db) {
 }
 
 // --- internals ---
+
+/**
+ * Only asked on a negotiable offer: the rate the taker is proposing, so a poster who finds it
+ * insulting can decline from the DM instead of negotiating there. Skipping leaves the rate open.
+ */
+async function rateOf(
+  conversation: Wizard,
+  ctx: WizardContext,
+  offer: OfferDetail,
+): Promise<number | null> {
+  const { base, quote } = ratePair(offer.giveCurrency, offer.getCurrency);
+  const answer = await askText<number>(
+    conversation,
+    ctx,
+    ctx.t('take-rate', { base, quote }),
+    (text) => {
+      const value = Number(text.trim().replace(/\s/g, '').replace(',', '.'));
+      return Number.isFinite(value) && value > 0 ? { value } : { error: ctx.t('wizard-bad-rate') };
+    },
+    [
+      {
+        label:
+          offer.rate === null
+            ? ctx.t('take-rate-later')
+            : ctx.t('take-rate-theirs', { rate: formatAmount(offer.rate * 100) }),
+        value: 'skip',
+      },
+    ],
+  );
+  return answer.kind === 'value' ? answer.value : null;
+}
 
 /** The same rules `createClaim` enforces, checked before asking three questions for nothing. */
 function takeable(

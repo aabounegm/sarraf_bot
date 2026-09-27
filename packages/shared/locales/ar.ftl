@@ -122,6 +122,9 @@ claim-yours = أكّد { $name } — العرض لك
 contact-handle = راسله مباشرة: @{ $handle }
 claim-you-marked-done = أنهيت من جهتك · بانتظار { $name }
 claim-finished = اكتملت الصفقة
+your-rate-section = سعرك · اختياري
+your-rate-hint = اتركه فارغاً للموافقة على سعرهم، أو اقترح سعراً ليردّوا دون محادثة.
+claim-rate = بسعر 1 { $base } = { $rate } { $quote }
 your-request = طلبك: { $amount } على { $receive } · { $total } عبر { $method }
 claim-methods = يدفع { $total } عبر { $method } · يريد { $currency } على { $receive }
 cancel-request = إلغاء الطلب
@@ -149,6 +152,7 @@ error-not-your-offer = هذا ليس عرضك.
 error-not-your-claim = هذا ليس طلبك.
 error-offer-finished = هذا العرض منتهٍ بالفعل.
 error-unknown-method = طريقة الدفع هذه ليست ضمن العرض.
+error-rate-not-negotiable = سعر هذا العرض ثابت، فلا يمكنك اقتراح سعر آخر.
 
 ## Bot — claim notifications
 claim-request = يريد { $name } أخذ { $amount } من عرضك #{ $id } ({ $total } عبر { $method }). هل ما زال متاحاً؟
@@ -230,3 +234,6 @@ wizard-use-buttons = استخدم الأزرار أعلاه، أو /cancel.
 ## Bot — take wizard
 take-amount-hint = { $max }. أرسل رقماً، أو:
 take-preview = تطلب { $amount } من #{ $id } على { $receive }، وتدفع { $total } عبر { $method }.
+take-rate = ما السعر الذي تقترحه؟ أرسل رقماً — 1 { $base } = … { $quote }.
+take-rate-theirs = سعرهم ({ $rate })
+take-rate-later = نتفق في المحادثة

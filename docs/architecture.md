@@ -261,6 +261,7 @@ Runbook: [deployment.md](deployment.md). The shape:
 | 2026-09-15 | `useMainButton` posts the same params twice                                                      | Android repaints the label only on the next update (`BotButtons.verifyDrawable` omits it); the twin call forces it     |
 | 2026-09-15 | Telegram's back button only when `router.history.canGoBack()`                                    | A `startapp=take_<id>` deep link opens a sub-screen with no history, where the button was there and did nothing        |
 | 2026-09-22 | A channel post too old to delete (48 h) is edited into a "no longer available" line instead      | Seen in production: the delete was refused, nothing retries a finished offer, and the post stayed up for good          |
+| 2026-09-27 | A claim may carry its own `rate` (negotiable offers only); the offer's rate is never touched     | A counter-rate on the request lets the poster decline a hopeless one on sight; `claim.rate ?? offer.rate` is the total |
 
 ## 11. Roadmap (suggested order — dependency and value)
 

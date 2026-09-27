@@ -3,7 +3,7 @@ import { and, desc, eq, inArray } from 'drizzle-orm';
 import { InlineKeyboard } from 'grammy';
 
 import { type Db, type DbOrTx, schema } from '../../db/index.ts';
-import { type Translate, totalText } from '../offers/render.ts';
+import { type Translate, claimRateText, totalText } from '../offers/render.ts';
 import { type OfferDetail, getOffer } from '../offers/service.ts';
 import type { ClaimAction } from './service.ts';
 
@@ -54,7 +54,7 @@ function posterCard(p: Parties, t: Translate, event?: ClaimEvent) {
       name,
       amount: amountOf(p),
       id: p.offer.id,
-      total: totalText(p.offer, p.claim.amount, t),
+      total: totalOf(p, t),
       method: p.claim.method,
     }),
     t('claim-receive-method', {
@@ -62,6 +62,8 @@ function posterCard(p: Parties, t: Translate, event?: ClaimEvent) {
       currency: p.offer.giveCurrency,
       method: p.claim.receiveMethod,
     }),
+    // On a negotiable offer the rate is the thing to decline over, so it is on its own line.
+    ...rateLines(p, t),
   ];
   const buttons = new InlineKeyboard();
 
@@ -100,9 +102,10 @@ function takerCard(p: Parties, t: Translate) {
     t('your-request', {
       amount: amountOf(p),
       receive: p.claim.receiveMethod,
-      total: totalText(p.offer, p.claim.amount, t),
+      total: totalOf(p, t),
       method: p.claim.method,
     }),
+    ...rateLines(p, t),
     `#${p.offer.id} · ${name}`,
   ];
   const buttons = new InlineKeyboard();
@@ -145,6 +148,13 @@ export const chatLink = (user: UserRow) =>
   user.username ? `https://t.me/${user.username}` : `tg://user?id=${user.id}`;
 
 export const amountOf = (p: Parties) => `${formatAmount(p.claim.amount)} ${p.offer.giveCurrency}`;
+
+/** The claim's own rate wins over the offer's wherever this claim's total is shown. */
+const totalOf = (p: Parties, t: Translate) =>
+  totalText(p.offer, p.claim.amount, t, p.claim.rate ?? p.offer.rate);
+
+const rateLines = (p: Parties, t: Translate) =>
+  p.claim.rate === null ? [] : [claimRateText(p.offer, p.claim.rate, t)];
 
 /** Statuses that still need the taker: the "Your requests" half of `/mine` shows these, newest first. */
 const OPEN: ClaimStatus[] = ['pending', 'confirmed'];

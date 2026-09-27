@@ -1,4 +1,4 @@
-import { COMMUNITY_TIMEZONE, convert, formatAmount, rateInfo } from '@sarraf/shared';
+import { COMMUNITY_TIMEZONE, convert, formatAmount, rateInfo, ratePair } from '@sarraf/shared';
 
 import type { OfferSummary } from './service.ts';
 
@@ -47,15 +47,29 @@ export function rateLine(o: OfferSummary, t: Translate): string {
   return `${rate} ${t('channel-total', { total: formatAmount(total), currency: o.getCurrency })}`;
 }
 
-/** What a taker would pay for `amount`, or "Rate negotiable" when there is no rate. */
+/**
+ * What a taker would pay for `amount`, or "Rate negotiable" when there is no rate. `rate` overrides
+ * the offer's — a claim on a negotiable offer may name its own.
+ */
 export function totalText(
   o: Pick<OfferSummary, 'giveCurrency' | 'getCurrency' | 'rate'>,
   amount: number,
   t: Translate,
+  rate = o.rate,
 ): string {
-  return o.rate === null
+  return rate === null
     ? t('rate-open')
-    : amountText(convert(o.giveCurrency, o.getCurrency, o.rate, amount), o.getCurrency);
+    : amountText(convert(o.giveCurrency, o.getCurrency, rate, amount), o.getCurrency);
+}
+
+/** "At 1 USDT = 90 RUB" — the taker's counter-rate, spelled out next to the total it produced. */
+export function claimRateText(
+  o: Pick<OfferSummary, 'giveCurrency' | 'getCurrency'>,
+  rate: number,
+  t: Translate,
+): string {
+  const { base, quote } = ratePair(o.giveCurrency, o.getCurrency);
+  return t('claim-rate', { base, quote, rate: formatAmount(rate * 100) });
 }
 
 /** Green = take it now, amber = part of it left, red = it stopped; anything else keeps the plain dot. */

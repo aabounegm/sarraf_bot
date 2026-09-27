@@ -44,6 +44,8 @@ export interface OfferDetail extends OfferSummary {
     amount: number;
     method: string;
     receiveMethod: string;
+    /** The taker's counter-rate, if they named one; null = the offer's rate stands. */
+    rate: number | null;
     status: ClaimStatus;
     takerDone: boolean;
     posterDone: boolean;
@@ -188,6 +190,7 @@ export function getOffer(db: DbOrTx, offerId: number, viewerId?: number): OfferD
       amount: c.amount,
       method: c.method,
       receiveMethod: c.receiveMethod,
+      rate: c.rate,
       status: c.status,
       takerDone: c.takerDone,
       posterDone: c.posterDone,

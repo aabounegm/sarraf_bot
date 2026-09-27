@@ -120,6 +120,9 @@ claim-yours = { $name } подтвердил(а) — это ваше
 contact-handle = Написать напрямую: @{ $handle }
 claim-you-marked-done = Вы отметили как выполненное · ждём { $name }
 claim-finished = Сделка завершена
+your-rate-section = Ваш курс · необязательно
+your-rate-hint = Оставьте пустым, чтобы согласиться с их курсом, или предложите свой — тогда ответят без переписки.
+claim-rate = По курсу 1 { $base } = { $rate } { $quote }
 your-request = Ваш запрос: { $amount } на { $receive } · { $total } через { $method }
 claim-methods = Платит { $total } через { $method } · хочет { $currency } на { $receive }
 cancel-request = Отменить запрос
@@ -147,6 +150,7 @@ error-not-your-offer = Это не ваше предложение.
 error-not-your-claim = Это не ваш запрос.
 error-offer-finished = Это предложение уже завершено.
 error-unknown-method = Такого способа оплаты нет в предложении.
+error-rate-not-negotiable = Курс в этом предложении фиксированный, свой предложить нельзя.
 
 ## Bot — claim notifications
 claim-request = { $name } хочет взять { $amount } из вашего предложения #{ $id } ({ $total } через { $method }). Оно ещё актуально?
@@ -227,3 +231,6 @@ wizard-use-buttons = Используйте кнопки выше или /cancel
 ## Bot — take wizard
 take-amount-hint = { $max }. Отправьте число или:
 take-preview = Вы запрашиваете { $amount } из #{ $id } на { $receive }, платите { $total } через { $method }.
+take-rate = Какой курс вы предлагаете? Отправьте число — 1 { $base } = … { $quote }.
+take-rate-theirs = Их курс ({ $rate })
+take-rate-later = Договоримся в чате

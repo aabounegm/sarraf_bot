@@ -30,6 +30,7 @@ const OPEN: ClaimStatus[] = ['pending', 'confirmed'];
 
 export function createClaim(db: Db, taker: TelegramUser, input: ClaimInput): OfferDetail {
   let claimId = 0;
+  const rate = input.rate ?? null; // a counter-rate the taker proposed, or the offer's rate stands
   const offer = db.transaction((tx) => {
     ensureUser(tx, taker);
     const row = tx.select().from(offers).where(eq(offers.id, input.offerId)).get();
@@ -38,6 +39,8 @@ export function createClaim(db: Db, taker: TelegramUser, input: ClaimInput): Off
     if (row.status !== 'active') throw new AppError(409, 'offer-unavailable');
     if (!row.getMethods.includes(input.method)) throw new AppError(400, 'unknown-method');
     if (!row.giveMethods.includes(input.receiveMethod)) throw new AppError(400, 'unknown-method');
+    // A fixed rate is the whole point of not marking the offer negotiable.
+    if (rate !== null && !row.negotiable) throw new AppError(400, 'rate-not-negotiable');
     if (openClaimOf(tx, row.id, taker.id)) throw new AppError(409, 'already-claimed');
     if (input.amount > remainingOf(tx, row)) throw new AppError(409, 'amount-exceeds-remaining');
 
@@ -49,6 +52,7 @@ export function createClaim(db: Db, taker: TelegramUser, input: ClaimInput): Off
         amount: input.amount,
         method: input.method,
         receiveMethod: input.receiveMethod,
+        rate,
       })
       .returning()
       .get().id;

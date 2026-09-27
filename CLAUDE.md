@@ -124,7 +124,8 @@ Rules of thumb:
 [docs/features/offers.md](docs/features/offers.md), [docs/features/claims.md](docs/features/claims.md)
 and [docs/features/bot.md](docs/features/bot.md). Working on **both** surfaces:
 create/browse/detail/edit/pause/resume/close/repost; take (amount, what you pay with, what you
-receive on) → confirm/decline → two-sided done (request DM
+receive on, and on a negotiable offer the rate you propose — `claims.rate`, 2026-09-27) →
+confirm/decline → two-sided done (request DM
 with `[Confirm]` `[Decline]`, re-rendered on every transition, stale buttons answer "Already closed");
 "Your requests"; contact gating; every mutation re-renders the channel post (verified against a real
 channel). In the chat: the reply keyboard, Telegram's "/" menu and the mini-app button next to the
@@ -140,7 +141,7 @@ due — expire the offer (post deleted, poster gets `[Repost]`), time out a 12h-
 (taker told), ping the poster of a no-expiry offer every 48h (`[Yes, still on]` `[Pause]` `[Close]`) and
 pause it 24h later if nobody answers. Every job calls the same services the buttons do, so there is
 one code path per outcome; the due-work is `runDueWork(db, now)`, which is how the tests drive it.
-`pnpm check` is green (55 bot tests, 7 shared). Not yet exercised against a real chat: the claim DMs,
+`pnpm check` is green (58 bot tests, 7 shared). Not yet exercised against a real chat: the claim DMs,
 the wizards and the scheduler's DMs.
 
 Not yet done, suggested order (see architecture.md → Roadmap for detail):

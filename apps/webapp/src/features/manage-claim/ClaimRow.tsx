@@ -2,7 +2,7 @@ import { useLocalization } from '@fluent/react';
 import { Avatar, Button, Cell } from '@telegram-apps/telegram-ui';
 
 import { useClaimAction } from '../../entities/claim/api.ts';
-import { claimMethodsText } from '../../entities/claim/format.ts';
+import { claimMethodsText, claimRateText } from '../../entities/claim/format.ts';
 import type { Claim } from '../../entities/claim/model.ts';
 import { amount } from '../../entities/offer/format.ts';
 import type { OfferDetail } from '../../entities/offer/model.ts';
@@ -13,6 +13,7 @@ export function ClaimRow({ offer, claim }: { offer: OfferDetail; claim: Claim })
   const { l10n } = useLocalization();
   const action = useClaimAction();
   const pending = claim.status === 'pending';
+  const rateLine = claimRateText(l10n, offer, claim);
   const run = (a: 'confirm' | 'decline' | 'done') =>
     action.mutate({ id: claim.id, action: a }, { onSuccess: () => haptic('success') });
 
@@ -26,6 +27,8 @@ export function ClaimRow({ offer, claim }: { offer: OfferDetail; claim: Claim })
       description={
         <>
           <div>{claimMethodsText(l10n, offer, claim)}</div>
+          {/* On a negotiable offer the rate is what a poster confirms or declines over. */}
+          {rateLine && <div>{rateLine}</div>}
           <span style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
             {pending && (
               <>

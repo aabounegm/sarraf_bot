@@ -57,6 +57,24 @@ test('take: pending requests reserve nothing and are visible to everyone', () =>
   assert.equal(offer.claims[0]?.status, 'pending');
 });
 
+test('a counter-rate is kept on the claim, and only a negotiable offer takes one', () => {
+  const db = openDb(':memory:');
+  const asking = createOffer(db, alex, { ...input, negotiable: true });
+  const fixed = createOffer(db, alex, input);
+  const take = { amount: toMinor(100), method: 'SBP', receiveMethod: 'TRC20' };
+
+  const offer = createClaim(db, nour, { ...take, offerId: asking.id, rate: 90 });
+  assert.equal(offer.claims[0]?.rate, 90, 'the taker proposed 90, not the 96.5 asked');
+  assert.equal(offer.rate, 96.5, 'the offer itself is untouched');
+
+  assert.equal(
+    code(() => createClaim(db, karim, { ...take, offerId: fixed.id, rate: 90 })),
+    'rate-not-negotiable',
+  );
+  const noRate = createClaim(db, karim, { ...take, offerId: asking.id });
+  assert.equal(noRate.claims.find((c) => c.taker.id === karim.id)?.rate, null, 'optional');
+});
+
 test('take is refused for own offers, closed offers, unknown methods and seconds helpings', () => {
   const { db, offerId } = board();
   const take = (
