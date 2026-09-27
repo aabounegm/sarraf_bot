@@ -4,6 +4,7 @@ import {
   CURRENCY_CODES,
   type Currency,
   boardCallback,
+  currencyLabel,
   parseBoardCallback,
   takeCallback,
 } from '@sarraf/shared';
@@ -86,7 +87,7 @@ function filters(
 ): InlineKeyboard {
   const chips: [string, Currency | null][] = [
     [ctx.t('anything'), null],
-    ...CURRENCY_CODES.map((code): [string, Currency | null] => [code, code]),
+    ...CURRENCY_CODES.map((code): [string, Currency | null] => [currencyLabel(code), code]),
   ];
   chips.forEach(([label, value], n) => {
     keyboard.text(value === give ? `✓ ${label}` : label, boardCallback(value, 0));

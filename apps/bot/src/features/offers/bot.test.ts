@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { type OfferInput, toMinor } from '@sarraf/shared';
+import { type OfferInput, currencyLabel, toMinor } from '@sarraf/shared';
 
 import { harness } from '../../bot/testing.ts';
 import { flushClaimNotifications, startClaimNotifications } from '../claims/notify.ts';
@@ -27,7 +27,7 @@ test('the /new wizard walks the spec steps and posts a valid offer', async () =>
   await say(alex, '/new');
   assert.match(sent().at(-1)!.text!, /New offer\. What do you give\?/);
 
-  await tap(alex, 'USDT');
+  await tap(alex, currencyLabel('USDT'));
   assert.match(sent().at(-1)!.text!, /How much USDT\?/);
 
   await say(alex, '200');
@@ -51,7 +51,7 @@ test('the /new wizard walks the spec steps and posts a valid offer', async () =>
   );
 
   await tap(alex, 'Done (1)');
-  await tap(alex, 'RUB');
+  await tap(alex, currencyLabel('RUB'));
   await tap(alex, 'SBP');
   await tap(alex, 'Done (1)');
   assert.match(sent().at(-1)!.text!, /1 USDT = … RUB/, 'the rate is asked in the right direction');
@@ -103,7 +103,7 @@ test('the wizard hands a command back instead of eating it', async () => {
   const { db, say, tap, sent } = harness();
 
   await say(alex, '/new');
-  await tap(alex, 'USDT');
+  await tap(alex, currencyLabel('USDT'));
   await say(alex, '/mine');
 
   assert.match(
@@ -187,11 +187,11 @@ test('[Edit] walks the same questions with the current answers one tap away', as
   assert.ok(
     sent()
       .at(-1)!
-      .buttons.some((b) => b.text === '✓ USDT'),
+      .buttons.some((b) => b.text === `✓ ${currencyLabel('USDT')}`),
     'the answer already on the offer is ticked',
   );
 
-  await tap(alex, '✓ USDT');
+  await tap(alex, `✓ ${currencyLabel('USDT')}`);
   assert.deepEqual(
     sent()
       .at(-1)!
@@ -202,7 +202,7 @@ test('[Edit] walks the same questions with the current answers one tap away', as
 
   await say(alex, '300');
   await tap(alex, 'Done (1)'); // TRC20 is already ticked
-  await tap(alex, '✓ RUB');
+  await tap(alex, `✓ ${currencyLabel('RUB')}`);
   await tap(alex, 'Done (1)');
   await tap(alex, 'Keep 96.5');
   await tap(alex, '6h');
@@ -234,7 +234,7 @@ test('a claim button still works while a wizard is waiting for an answer', async
   await tap(alex, 'Confirm'); // the request DM, arrived mid-wizard
   assert.equal(getOffer(db, offer.id).claims[0]?.status, 'confirmed');
 
-  await tap(alex, 'USDT'); // the wizard is still where it was
+  await tap(alex, currencyLabel('USDT')); // the wizard is still where it was
   assert.match(sent().at(-1)!.text!, /How much USDT\?/);
 });
 
@@ -261,7 +261,7 @@ test('changing a currency drops the answers that belonged to the old one', async
 
   await say(alex, '/mine');
   await tap(alex, 'Edit');
-  await tap(alex, 'EUR'); // was USDT
+  await tap(alex, currencyLabel('EUR')); // was USDT
 
   const question = sent().at(-1)!;
   assert.match(question.text!, /How much EUR\?/);

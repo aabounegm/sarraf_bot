@@ -1,9 +1,11 @@
 import { useLocalization } from '@fluent/react';
 import {
   CURRENCY_CODES,
+  type Currency,
   EXPIRY_OPTIONS_HOURS,
   NOTE_MAX_LENGTH,
   convert,
+  currencyLabel,
   formatAmount,
   rateBase,
   toMinor,
@@ -22,7 +24,7 @@ import type { useOfferForm } from './useOfferForm.ts';
 
 type Form = ReturnType<typeof useOfferForm>;
 
-function Chips<T extends string>({
+function Chips<T extends Currency>({
   options,
   value,
   onChange,
@@ -34,8 +36,13 @@ function Chips<T extends string>({
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '8px 16px' }}>
       {options.map((o) => (
-        <Chip key={o} mode={o === value ? 'mono' : 'outline'} onClick={() => onChange(o)}>
-          {o}
+        <Chip
+          key={o}
+          mode={o === value ? 'mono' : 'outline'}
+          onClick={() => onChange(o)}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          {currencyLabel(o)}
         </Chip>
       ))}
     </div>

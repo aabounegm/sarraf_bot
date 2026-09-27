@@ -1,5 +1,5 @@
 import { useLocalization } from '@fluent/react';
-import { CURRENCY_CODES, type Currency } from '@sarraf/shared';
+import { CURRENCY_CODES, type Currency, currencyLabel } from '@sarraf/shared';
 import { useNavigate } from '@tanstack/react-router';
 import {
   Chip,
@@ -37,8 +37,13 @@ export function BrowsePage() {
             {l10n.getString('anything')}
           </Chip>
           {CURRENCY_CODES.map((c) => (
-            <Chip key={c} mode={give === c ? 'mono' : 'outline'} onClick={() => setGive(c)}>
-              {c}
+            <Chip
+              key={c}
+              mode={give === c ? 'mono' : 'outline'}
+              onClick={() => setGive(c)}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              {currencyLabel(c)}
             </Chip>
           ))}
         </div>

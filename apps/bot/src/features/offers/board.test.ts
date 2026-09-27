@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { type OfferInput, toMinor } from '@sarraf/shared';
+import { CURRENCY_CODES, type OfferInput, currencyLabel, toMinor } from '@sarraf/shared';
 
 import { harness } from '../../bot/testing.ts';
 import { createOffer, getOffer } from './service.ts';
@@ -33,19 +33,7 @@ test('/board pages through the active offers in one message', async () => {
   assert.match(first.text!, /Alex gives 200 AED for EGP/, 'newest first');
   assert.deepEqual(
     first.buttons.map((b) => b.text),
-    [
-      '◀',
-      'Take',
-      '▶',
-      '✓ Anything',
-      'USDT',
-      'USD',
-      'EUR',
-      'AED',
-      'RUB',
-      'EGP',
-      'Open InnoExchange',
-    ],
+    ['◀', 'Take', '▶', '✓ Anything', ...CURRENCY_CODES.map(currencyLabel), 'Open InnoExchange'],
   );
 
   await tap(nour, '▶');
@@ -73,20 +61,20 @@ test('the filter chips narrow the board and tick the one you are on', async () =
   createOffer(db, alex, offer({ giveCurrency: 'AED', getCurrency: 'EGP', rate: 8.4 }));
 
   await say(nour, '/board');
-  await tap(nour, 'USDT');
+  await tap(nour, currencyLabel('USDT'));
 
   const view = calls.at(-1)!;
   assert.match(view.text!, /Offer 1 of 1/);
   assert.match(view.text!, /Alex gives 200 USDT for RUB/);
   assert.ok(
-    view.buttons.some((b) => b.text === '✓ USDT'),
+    view.buttons.some((b) => b.text === `✓ ${currencyLabel('USDT')}`),
     'the chip you are filtering by is ticked',
   );
   assert.ok(!view.buttons.some((b) => b.text === '◀'), 'nothing to page through in a list of one');
 
-  await tap(nour, 'EUR');
+  await tap(nour, currencyLabel('EUR'));
   assert.match(calls.at(-1)!.text!, /No offers yet/, 'an empty filter still offers the chips');
-  assert.ok(calls.at(-1)!.buttons.some((b) => b.text === '✓ EUR'));
+  assert.ok(calls.at(-1)!.buttons.some((b) => b.text === `✓ ${currencyLabel('EUR')}`));
 });
 
 test('[Take] on a board card enters the take wizard', async () => {

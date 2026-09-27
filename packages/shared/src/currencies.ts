@@ -1,5 +1,5 @@
 /** Order matters: the earlier currency is the rate base ("1 USDT = 96.5 RUB"). */
-export const CURRENCY_CODES = ['USDT', 'USD', 'EUR', 'AED', 'RUB', 'EGP'] as const;
+export const CURRENCY_CODES = ['USDT', 'USD', 'EUR', 'AED', 'EGP', 'RUB'] as const;
 export type Currency = (typeof CURRENCY_CODES)[number];
 
 /** Payment methods (networks for USDT) a user can pick for each currency. */
@@ -11,6 +11,18 @@ export const CURRENCY_METHODS: Record<Currency, readonly string[]> = {
   RUB: ['SBP', 'Tinkoff', 'Sber', 'Cash'],
   EGP: ['InstaPay', 'Vodafone Cash', 'Cash'],
 };
+
+/** Shown next to the code in pickers and filters, so the eye finds a currency without reading. */
+export const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  USDT: '₮',
+  USD: '$',
+  EUR: '€',
+  AED: 'Dh',
+  RUB: '₽',
+  EGP: 'E£',
+};
+
+export const currencyLabel = (code: Currency) => `${code} (${CURRENCY_SYMBOLS[code]})`;
 
 export function isCurrency(value: unknown): value is Currency {
   return typeof value === 'string' && (CURRENCY_CODES as readonly string[]).includes(value);

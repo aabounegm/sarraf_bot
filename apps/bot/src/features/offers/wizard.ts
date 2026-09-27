@@ -7,6 +7,7 @@ import {
   NOTE_MAX_LENGTH,
   OfferInput,
   availability,
+  currencyLabel,
   formatAmount,
   isCurrency,
   rateBase,
@@ -140,7 +141,8 @@ async function currency(
   current?: Currency,
 ): Promise<Currency> {
   for (;;) {
-    const picked = await choose(c, ctx, question, chunk(choicesOf(codes), 3), { current });
+    const choices = codes.map((value) => ({ label: currencyLabel(value), value }));
+    const picked = await choose(c, ctx, question, chunk(choices, 3), { current });
     if (isCurrency(picked)) return picked;
   }
 }
