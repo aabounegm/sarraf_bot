@@ -8,6 +8,7 @@ open-app = افتح InnoExchange
 back = رجوع
 cancel = إلغاء
 loading = جارٍ التحميل…
+-optional = اختياري
 error-generic = حدث خطأ ما. حاول مرة أخرى.
 
 ## Board
@@ -68,8 +69,8 @@ you-get = أنت تحصل على
 network = الشبكة
 payment-method = طريقة الدفع
 payment-method-hint = طريقة الدفع — كيف يمكن للآخرين الدفع لك
-rate-section = السعر · اختياري
-asking-rate-section = السعر المطلوب · اختياري
+rate-section = السعر · { -optional }
+asking-rate-section = السعر المطلوب · { -optional }
 negotiable = قابل للتفاوض
 negotiable-off-hint = معطّل — السعر ثابت ويعرف الآخذون ما سيدفعون
 negotiable-on-hint = يُعرض كـ"مطلوب"؛ يُتفق على السعر النهائي في المحادثة
@@ -78,7 +79,7 @@ total-asking = ≈ { $total } { $currency } بالسعر المطلوب
 expires-after = ينتهي بعد
 expiry-none = بلا انتهاء
 expiry-none-hint = بلا انتهاء: يسألك البوت كل 48 ساعة إن كان العرض ما زال قائماً ويوقف المنشور مؤقتاً إن لم تجب.
-notes-optional = ملاحظات · اختياري
+notes-optional = ملاحظات · { -optional }
 notes-placeholder = مثلاً: نقداً بعد الساعة 18:00 في تكنوبارك
 post-hint = يُنشر في القناة فوراً. سيراسلك البوت عندما يطلب أحدهم أخذ جزء منه.
 save-changes = حفظ التغييرات
@@ -122,7 +123,7 @@ claim-yours = أكّد { $name } — العرض لك
 contact-handle = راسله مباشرة: @{ $handle }
 claim-you-marked-done = أنهيت من جهتك · بانتظار { $name }
 claim-finished = اكتملت الصفقة
-your-rate-section = سعرك · اختياري
+your-rate-section = سعرك · { -optional }
 your-rate-hint = اتركه فارغاً للموافقة على سعرهم، أو اقترح سعراً ليردّوا دون محادثة.
 claim-rate = بسعر 1 { $base } = { $rate } { $quote }
 your-request = طلبك: { $amount } على { $receive } · { $total } عبر { $method }

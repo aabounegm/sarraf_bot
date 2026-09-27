@@ -8,6 +8,7 @@ open-app = Open InnoExchange
 back = Back
 cancel = Cancel
 loading = Loading…
+-optional = optional
 error-generic = Something went wrong. Please try again.
 
 ## Board
@@ -65,8 +66,8 @@ you-get = You get
 network = Network
 payment-method = Payment method
 payment-method-hint = Payment method — people can pay you via
-rate-section = Rate · optional
-asking-rate-section = Asking rate · optional
+rate-section = Rate · { -optional }
+asking-rate-section = Asking rate · { -optional }
 negotiable = Negotiable
 negotiable-off-hint = Off — rate is fixed, takers know what they pay
 negotiable-on-hint = Shown as "asking"; final rate agreed in chat
@@ -75,7 +76,7 @@ total-asking = ≈ { $total } { $currency } at asking rate
 expires-after = Expires after
 expiry-none = None
 expiry-none-hint = No expiry: the bot asks you every 48h if it's still on and pauses the post if you don't answer.
-notes-optional = Notes · optional
+notes-optional = Notes · { -optional }
 notes-placeholder = e.g. Cash after 18:00 at Technopark
 post-hint = Posts to the channel immediately. You'll get a bot message whenever someone asks to take part of it.
 save-changes = Save changes
@@ -119,7 +120,7 @@ claim-yours = { $name } confirmed — it's yours
 contact-handle = Message them at @{ $handle }
 claim-you-marked-done = You marked done · waiting for { $name }
 claim-finished = Deal completed
-your-rate-section = Your rate · optional
+your-rate-section = Your rate · { -optional }
 your-rate-hint = Leave it blank to accept their rate, or propose one so they can answer without a chat.
 claim-rate = At 1 { $base } = { $rate } { $quote }
 your-request = Your request: { $amount } to { $receive } · { $total } via { $method }

@@ -8,6 +8,7 @@ open-app = Открыть InnoExchange
 back = Назад
 cancel = Отмена
 loading = Загрузка…
+-optional = необязательно
 error-generic = Что-то пошло не так. Попробуйте ещё раз.
 
 ## Board
@@ -66,8 +67,8 @@ you-get = Вы получаете
 network = Сеть
 payment-method = Способ оплаты
 payment-method-hint = Способ оплаты — как вам могут заплатить
-rate-section = Курс · необязательно
-asking-rate-section = Желаемый курс · необязательно
+rate-section = Курс · { -optional }
+asking-rate-section = Желаемый курс · { -optional }
 negotiable = Договорной
 negotiable-off-hint = Выкл. — курс фиксированный, участники знают, сколько платят
 negotiable-on-hint = Показывается как «запрос»; итоговый курс согласуется в чате
@@ -76,7 +77,7 @@ total-asking = ≈ { $total } { $currency } по желаемому курсу
 expires-after = Истекает через
 expiry-none = Без срока
 expiry-none-hint = Без срока: бот каждые 48 ч спрашивает, актуально ли предложение, и ставит пост на паузу, если вы не отвечаете.
-notes-optional = Заметки · необязательно
+notes-optional = Заметки · { -optional }
 notes-placeholder = напр. Наличные после 18:00 в Технопарке
 post-hint = Публикуется в канале сразу. Бот напишет вам, когда кто-то захочет взять часть.
 save-changes = Сохранить изменения
@@ -120,7 +121,7 @@ claim-yours = { $name } подтвердил(а) — это ваше
 contact-handle = Написать напрямую: @{ $handle }
 claim-you-marked-done = Вы отметили как выполненное · ждём { $name }
 claim-finished = Сделка завершена
-your-rate-section = Ваш курс · необязательно
+your-rate-section = Ваш курс · { -optional }
 your-rate-hint = Оставьте пустым, чтобы согласиться с их курсом, или предложите свой — тогда ответят без переписки.
 claim-rate = По курсу 1 { $base } = { $rate } { $quote }
 your-request = Ваш запрос: { $amount } на { $receive } · { $total } через { $method }
